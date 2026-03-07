@@ -1,24 +1,25 @@
-// tutophia splash screen
+// successful registration
 
 import 'package:flutter/material.dart';
 import 'login.dart';
+import 'StudentAccess/dashboard-student.dart';
 
-class SplashScreen extends StatefulWidget {
+class SuccessfulRegistration extends StatefulWidget {
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  _SuccessfulRegistrationState createState() => _SuccessfulRegistrationState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SuccessfulRegistrationState extends State<SuccessfulRegistration> {
   @override
   void initState() {
     super.initState();
 
     // loading delay
     Future.delayed(Duration(seconds: 5), () {
-      // navigate to login screen after delay for splash screen
+      // navigate to dashboard screen after delay for splash screen
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
+        MaterialPageRoute(builder: (context) => StudentDashboard()),
       );
     });
   }
@@ -33,19 +34,19 @@ class _SplashScreenState extends State<SplashScreen> {
         height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFFFFEFF), Color(0xFFF9AB55)],
+            colors: [Color(0xFFF9AB55), Color(0xFFF9AB55)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
 
-        // logo, app name, tagline, loading indicator of splash screen
+        // illustration, indicator,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // tutophia logo
+            // registered illustration
             Image.asset(
-              'assets/images/tutophia-logo-white-outline.png',
+              'assets/images/registered-illustration.png',
               width: 200,
               height: 200,
             ),
@@ -53,22 +54,22 @@ class _SplashScreenState extends State<SplashScreen> {
 
             // tutophia name
             Text(
-              'TUTOPHIA',
+              'ACCOUNT CREATED',
               style: TextStyle(
                 fontFamily: 'Arimo',
                 fontSize: 40,
-                color: Color(0xFF386FA4),
+                color: Color.fromARGB(255, 255, 255, 255),
                 fontWeight: FontWeight.bold,
               ),
             ),
 
-            // tutophia tagline
+            // loading message
             Text(
-              'There’s always a tutor here for you!',
+              'TUTOPHIA is now bringing you to the Dashboard. Please wait a moment.',
               style: TextStyle(
-                fontFamily: 'Arimo',
+                fontFamily: 'Arial',
                 fontSize: 14,
-                color: Colors.black54,
+                color: const Color.fromARGB(255, 255, 255, 255),
                 fontWeight: FontWeight.bold,
               ),
             ),

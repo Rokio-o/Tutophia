@@ -38,6 +38,15 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.11.0
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/Cess-Logo.png"
+
+  flutter_test:
+    sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -60,6 +69,17 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/tutophia-logo-white-outline.png
+    - assets/images/login-illustration.png
+    - assets/images/registered-illustration.png
+    - assets/images/tutor.png
+    - assets/images/student.png
+    - assets/icons/feedback.png
+    - assets/icons/find_tutors.png
+    - assets/icons/home_icon.png
+    - assets/icons/my_bookings.png
+    - assets/icons/notification_icon.png
+    - assets/icons/profile_icon.png
+    - assets/icons/session_materials.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
