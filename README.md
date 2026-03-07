@@ -1,19 +1,65 @@
-# tutophia
+# Tutophia – HCI Final Project 🎓📚
 
-A new Flutter project.
+---
 
-## Getting Started
+## Project Overview
+A centralized tutoring platform designed for college students to enhance their learning experience. It helps students connect with tutors, organize their study sessions, and access guidance for various courses, making tutoring more accessible, structured, and effective. The platform supports students in improving academic performance and maximizing learning outcomes.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+**Tech Stack:**  
+- **Framework & Language:** Flutter (Dart) 🖥️  
+- **Database:** Firebase ☁️  
+- **UI Design Tools:** Figma & Canva 🎨  
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Team Members 👥
+- De Lemos, Wenifredo Jr.  
+- Donato, Raymond  
+- Gallo, Jeancess  
+- Malaga, Lawrence  
+- Niez, John Alces  
 
-# Tutophia
-College Tutor Management and Booking App
+---
+
+## Modules
+
+### **Student Modules** 🧑‍🎓
+
+**Security:**  
+- 🔑 Login Module  
+- 📝 Registration Module 
+
+**Menu:**  
+- 🔍 Find Tutors (Booking process)
+- 📅 My Bookings  
+- 📂 Session Materials  
+- 🕘 History  
+- ✉️ Feedback  
+
+**Navigation:**  
+- 🏠 Dashboard (Home)  
+- 🔔 Notifications  
+- 👤 Profile  
+
+---
+
+### **Tutor Modules** 👨‍🏫
+
+**Security:**  
+- 🔑 Login Module  
+- 📝 Registration Module  
+
+**Menu:**  
+- 📩 Session Requests  
+- ⬆️ Upload Materials  
+- 🕘 Session History  
+- ✉️ Feedback  
+
+**Navigation:**  
+- 🏠 Dashboard (Home)  
+- 🔔 Notifications  
+- ⚙️ Profile Settings  
+
+
