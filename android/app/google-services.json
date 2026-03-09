@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "338174668418",
+    "project_id": "tutophia-firebase",
+    "storage_bucket": "tutophia-firebase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:338174668418:android:3bb750e1e04066fa884e9b",
+        "android_client_info": {
+          "package_name": "com.example.tutophia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqJso92Iih1-nHHPVNAzmCxpOuYGIFemM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
