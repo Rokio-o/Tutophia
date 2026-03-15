@@ -73,13 +73,14 @@ flutter:
     - assets/images/registered-illustration.png
     - assets/images/tutor.png
     - assets/images/student.png
-    - assets/icons/feedback.png
-    - assets/icons/find_tutors.png
+    - assets/images/forgot-pass-illustration.png
     - assets/icons/home_icon.png
-    - assets/icons/my_bookings.png
     - assets/icons/notification_icon.png
     - assets/icons/profile_icon.png
     - assets/icons/session_materials.png
+    - assets/icons/find_tutors.png
+    - assets/icons/feedback.png
+    - assets/icons/my_bookings.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

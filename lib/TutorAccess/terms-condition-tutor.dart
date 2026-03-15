@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tutophia/TutorAccess/registration3-tutor.dart';
+import 'package:tutophia/TutorAccess/registration2-tutor.dart';
 import 'package:tutophia/successful-reg.dart';
 
 class TermsandConditionsTutor extends StatefulWidget {
@@ -78,7 +78,7 @@ class TermsandConditionsTutorState extends State<TermsandConditionsTutor> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => TutorRegistration3()),
+              MaterialPageRoute(builder: (context) => TutorRegistration2()),
             );
           },
         ),

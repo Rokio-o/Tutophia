@@ -9,6 +9,12 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   int _selectedIndex = 0;
+
+  // placeholder stats - in real app, these would be dynamic based on user data
+  int upcomingSessions = 0;
+  int pendingBookings = 0;
+  int newMaterials = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,125 +28,132 @@ class _StudentDashboardState extends State<StudentDashboard> {
             children: [
               const SizedBox(height: 20),
 
-              // Header with Dashboard title and subtitle
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "DASHBOARD",
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xff3d6fa5),
-                    ),
-                  ),
-                  Text(
-                    "Learn Smarter. Achieve Greater",
-                    style: TextStyle(color: Colors.black54, fontSize: 14),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              // Student Profile Section
+              // dashboard header with logo
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Profile Image Placeholder
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.grey.shade300,
-                      border: Border.all(color: Colors.grey.shade400),
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/icons/student_profile_placeholder.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey.shade300,
-                            child: const Icon(
-                              Icons.person,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 15),
-
-                  // Student Info
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Wenifredo De Lemos",
+                        "DASHBOARD",
                         style: TextStyle(
-                          fontSize: 18,
+                          fontFamily: 'Arimo',
+                          fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: Color(0xff3d6fa5),
                         ),
                       ),
-                      SizedBox(height: 4),
                       Text(
-                        "Student",
-                        style: TextStyle(fontSize: 14, color: Colors.black54),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        "Computer Science",
-                        style: TextStyle(fontSize: 14, color: Colors.black54),
+                        "Learn Smarter. Achieve Greater",
+                        style: TextStyle(color: Colors.black54, fontSize: 14),
                       ),
                     ],
                   ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              // Stats Cards Row
-              Row(
-                children: [
-                  // Upcoming Sessions Card
-                  Expanded(
-                    child: _buildStatCard(
-                      "2",
-                      "Upcoming Sessions",
-                      Icons.calendar_today,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Pending Bookings Card
-                  Expanded(
-                    child: _buildStatCard(
-                      "0",
-                      "Pending Bookings",
-                      Icons.pending_actions,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // New Materials Card
-                  Expanded(
-                    child: _buildStatCard(
-                      "3",
-                      "New Materials",
-                      Icons.menu_book,
-                    ),
+                  Image.asset(
+                    "assets/images/tutophia-logo-white-outline.png",
+                    height: 60,
+                    errorBuilder: (c, e, s) =>
+                        const Icon(Icons.school, size: 35),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
 
-              // Menu Grid Section with custom icons
+              // profile card with statistics
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xfff4a24c),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    // profile card
+                    Row(
+                      children: [
+                        Container(
+                          width: 75,
+                          height: 75,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              "assets/icons/student_profile_placeholder.png",
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, e, s) =>
+                                  const Icon(Icons.person, size: 40),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 15),
+
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Student Name",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              "Student",
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                            Text(
+                              "Course",
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // stats - to be change to dynamic values in app
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _statCard(
+                            upcomingSessions.toString(),
+                            "Upcoming\nSessions",
+                          ),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: _statCard(
+                            pendingBookings.toString(),
+                            "Pending\nBookings",
+                          ),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: _statCard(
+                            newMaterials.toString(),
+                            "New\nMaterials",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 25),
+
+              // menu option grid
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -149,180 +162,87 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 crossAxisSpacing: 15,
                 childAspectRatio: 1.2,
                 children: [
-                  _buildMenuItemWithCustomIcon(
-                    "Find Tutors",
-                    'assets/icons/find_tutors.png',
-                    () {},
-                  ),
-                  _buildMenuItemWithCustomIcon(
-                    "My Bookings",
-                    'assets/icons/my_bookings.png',
-                    () {},
-                  ),
-                  _buildMenuItemWithCustomIcon(
-                    "Session Materials",
-                    'assets/icons/session_materials.png',
-                    () {},
-                  ),
-                  _buildMenuItemWithCustomIcon(
-                    "Feedback",
-                    'assets/icons/feedback.png',
-                    () {},
-                  ),
-                  _buildMenuItemWithCustomIcon(
-                    "Session History",
-                    'assets/icons/session_history.png',
-                    () {},
-                  ),
+                  _menuButton("Find Tutors", Icons.search),
 
-                  // Empty space to maintain layout
-                  Container(),
+                  _menuButton("My Bookings", Icons.calendar_today),
+
+                  _menuButton("Session Materials", Icons.menu_book),
+
+                  _menuButton("Feedback", Icons.feedback),
                 ],
               ),
 
-              const SizedBox(height: 80), // Extra space for bottom navigation
+              const SizedBox(height: 15),
+
+              // session history button
+              GestureDetector(
+                onTap: () {},
+                child: Container(
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: const Color(0xff3d6fa5),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.history, color: Colors.white),
+                      SizedBox(width: 10),
+                      Text(
+                        "Session History",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 80),
             ],
           ),
         ),
       ),
 
-      // Bottom Navigation Bar with custom icons
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(
-            0xFFF9AB55,
-          ), // Highlight color for selected
-          unselectedItemColor: Colors.grey,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          items: [
-            BottomNavigationBarItem(
-              icon: Image.asset(
-                'assets/icons/home_icon.png',
-                width: 24,
-                height: 24,
-                color: _selectedIndex == 0 ? null : Colors.grey,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.home,
-                    color: _selectedIndex == 0
-                        ? const Color(0xFFF9AB55)
-                        : Colors.grey,
-                  );
-                },
-              ),
-              activeIcon: Image.asset(
-                'assets/icons/home_icon.png',
-                width: 24,
-                height: 24,
-                color: const Color(0xFFF9AB55),
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.home, color: Color(0xFFF9AB55));
-                },
-              ),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Image.asset(
-                'assets/icons/notification_icon.png',
-                width: 24,
-                height: 24,
-                color: _selectedIndex == 1 ? null : Colors.grey,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.notifications,
-                    color: _selectedIndex == 1
-                        ? const Color(0xFFF9AB55)
-                        : Colors.grey,
-                  );
-                },
-              ),
-              activeIcon: Image.asset(
-                'assets/icons/notification_icon.png',
-                width: 24,
-                height: 24,
-                color: const Color(0xFFF9AB55),
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.notifications,
-                    color: Color(0xFFF9AB55),
-                  );
-                },
-              ),
-              label: 'Notification',
-            ),
-            BottomNavigationBarItem(
-              icon: Image.asset(
-                'assets/icons/profile_icon.png',
-                width: 24,
-                height: 24,
-                color: _selectedIndex == 2 ? null : Colors.grey,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.person,
-                    color: _selectedIndex == 2
-                        ? const Color(0xFFF9AB55)
-                        : Colors.grey,
-                  );
-                },
-              ),
-              activeIcon: Image.asset(
-                'assets/icons/profile_icon.png',
-                width: 24,
-                height: 24,
-                color: const Color(0xFFF9AB55),
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.person, color: Color(0xFFF9AB55));
-                },
-              ),
-              label: 'Profile',
-            ),
-          ],
-        ),
+      // bottom navigation
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        selectedItemColor: const Color(0xfff4a24c),
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications),
+            label: "Notification",
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        ],
       ),
     );
   }
 
-  // Helper method to build stat cards
-  Widget _buildStatCard(String value, String label, IconData icon) {
+  // stat card widget
+  Widget _statCard(String number, String label) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(15),
       ),
       child: Column(
         children: [
-          Icon(icon, color: const Color(0xff3d6fa5), size: 24),
-          const SizedBox(height: 8),
           Text(
-            value,
+            number,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Color(0xff3d6fa5),
             ),
@@ -331,54 +251,36 @@ class _StudentDashboardState extends State<StudentDashboard> {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: Colors.black54),
+            style: const TextStyle(fontSize: 12),
           ),
         ],
       ),
     );
   }
 
-  // New helper method to build menu items with custom icons
-  Widget _buildMenuItemWithCustomIcon(
-    String title,
-    String iconPath,
-    VoidCallback onTap,
-  ) {
+  // menu button widget
+  Widget _menuButton(String title, IconData icon) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {},
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: const Color(0xff3d6fa5),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              iconPath,
-              width: 40,
-              height: 40,
-              color: const Color(0xff3d6fa5),
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(Icons.error, size: 32, color: Colors.grey.shade400);
-              },
-            ),
-            const SizedBox(height: 8),
+            Icon(icon, size: 40, color: Colors.white),
+
+            const SizedBox(height: 10),
+
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
               textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),

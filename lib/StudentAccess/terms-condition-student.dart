@@ -119,7 +119,7 @@ class TermsandConditionsStudentState extends State<TermsandConditionsStudent> {
                   'By checking this, you agree to all terms and conditions.',
                 ),
 
-                // MOVED: Create Account Button is now inside the scrollable list
+                // Create account button scrollable list
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 24.0),
                   child: SizedBox(

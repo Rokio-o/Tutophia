@@ -1,7 +1,5 @@
 // successful registration
-
 import 'package:flutter/material.dart';
-import 'login.dart';
 import 'StudentAccess/dashboard-student.dart';
 
 class SuccessfulRegistration extends StatefulWidget {
@@ -24,7 +22,7 @@ class _SuccessfulRegistrationState extends State<SuccessfulRegistration> {
     });
   }
 
-  // visual design of the splash screen
+  // visual design
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,13 +30,7 @@ class _SuccessfulRegistrationState extends State<SuccessfulRegistration> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF9AB55), Color(0xFFF9AB55)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        decoration: const BoxDecoration(color: Color(0xFFF9AB55)),
 
         // illustration, indicator,
         child: Column(
@@ -52,28 +44,32 @@ class _SuccessfulRegistrationState extends State<SuccessfulRegistration> {
             ),
             SizedBox(height: 20),
 
-            // tutophia name
+            // Account Created Title
             Text(
               'ACCOUNT CREATED',
-              style: TextStyle(
+              textAlign: TextAlign.center,
+              style: const TextStyle(
                 fontFamily: 'Arimo',
-                fontSize: 40,
+                fontSize: 24,
+                color: Color.fromARGB(255, 255, 255, 255),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Loading message
+            Text(
+              'TUTOPHIA is now bringing you to the Dashboard. Please wait a moment.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Arial',
+                fontSize: 14,
                 color: Color.fromARGB(255, 255, 255, 255),
                 fontWeight: FontWeight.bold,
               ),
             ),
 
-            // loading message
-            Text(
-              'TUTOPHIA is now bringing you to the Dashboard. Please wait a moment.',
-              style: TextStyle(
-                fontFamily: 'Arial',
-                fontSize: 14,
-                color: const Color.fromARGB(255, 255, 255, 255),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
 
             // loading indicator
             CircularProgressIndicator(

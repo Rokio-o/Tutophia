@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tutophia/registration-type.dart';
 import 'StudentAccess/dashboard-student.dart';
 import 'TutorAccess/dashboard-tutor.dart';
+import 'forgot-password.dart';
 
 class LoginScreen extends StatelessWidget {
   final double headerHeight = 250;
@@ -171,7 +172,14 @@ class LoginScreen extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ForgotPasswordScreen(),
+                              ),
+                            );
+                          },
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.zero,
                             minimumSize: Size(50, 30),
