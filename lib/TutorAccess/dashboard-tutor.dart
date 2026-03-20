@@ -1,4 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/TutorAccess/tutor-menu/session-requests-tutor.dart';
+import 'package:tutophia/widgets/tutor-widgets/tutor-dashboard-card.dart';
+import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
+import 'package:tutophia/widgets/tutor-widgets/header-tutor-wdgt.dart';
+import 'package:tutophia/TutorAccess/notification-tutor.dart';
+import 'package:tutophia/TutorAccess/profile-tutor.dart';
+import 'package:tutophia/TutorAccess/tutor-menu/upload-materials.dart';
+import 'package:tutophia/TutorAccess/tutor-menu/feedback-tutor.dart';
+import 'package:tutophia/TutorAccess/tutor-menu/session-history-tutor.dart';
 
 class TutorDashboard extends StatefulWidget {
   const TutorDashboard({super.key});
@@ -10,7 +19,11 @@ class TutorDashboard extends StatefulWidget {
 class _TutorDashboardState extends State<TutorDashboard> {
   int _selectedIndex = 0;
 
-  // placeholder stats - in app, these would be dynamic based on user data
+  // These would be fetched dynamically per logged-in user
+  final String tutorName = "Tutor Name";
+  final String tutorType = "Student Tutor";
+  final String tutorCourse = "Course";
+  final String? tutorProfileImage = " ";
   int upcomingSessions = 0;
   int bookingRequests = 0;
 
@@ -27,126 +40,24 @@ class _TutorDashboardState extends State<TutorDashboard> {
             children: [
               const SizedBox(height: 20),
 
-              // dashboard header with logo
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "DASHBOARD",
-                        style: TextStyle(
-                          fontFamily: 'Arimo',
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xff3d6fa5),
-                        ),
-                      ),
-                      Text(
-                        "Empower Minds Through Mentorship",
-                        style: TextStyle(color: Colors.black54, fontSize: 14),
-                      ),
-                    ],
-                  ),
-
-                  Image.asset(
-                    "assets/images/tutophia-logo-white-outline.png",
-                    height: 60,
-                    errorBuilder: (c, e, s) =>
-                        const Icon(Icons.school, size: 35),
-                  ),
-                ],
-              ),
+              // ── Header ──
+              const HeaderTutorWdgt.dashboard(),
 
               const SizedBox(height: 25),
 
-              // profile card with statistics
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xfff4a24c),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    // profile
-                    Row(
-                      children: [
-                        Container(
-                          width: 75,
-                          height: 75,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              "assets/icons/tutor_profile.png",
-                              fit: BoxFit.cover,
-                              errorBuilder: (c, e, s) =>
-                                  const Icon(Icons.person, size: 40),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(width: 15),
-
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Tutor Name",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-
-                            Text(
-                              "Student Tutor",
-                              style: TextStyle(color: Colors.white70),
-                            ),
-
-                            Text(
-                              "Course",
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // stats
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _statCard(
-                            upcomingSessions.toString(),
-                            "Upcoming\nSessions",
-                          ),
-                        ),
-
-                        const SizedBox(width: 15),
-
-                        Expanded(
-                          child: _statCard(
-                            bookingRequests.toString(),
-                            "Booking\nRequests",
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              // ── Tutor Dashboard Card (reusable widget) ──
+              TutorDashboardCard(
+                name: tutorName,
+                tutorType: tutorType,
+                course: tutorCourse,
+                upcomingSessions: upcomingSessions,
+                bookingRequests: bookingRequests,
+                profileImagePath: tutorProfileImage,
               ),
 
               const SizedBox(height: 30),
 
-              // menu grid
+              // ── Menu Grid ──
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -155,13 +66,38 @@ class _TutorDashboardState extends State<TutorDashboard> {
                 crossAxisSpacing: 15,
                 childAspectRatio: 1.2,
                 children: [
-                  _menuButton("Session Requests", Icons.class_),
-
-                  _menuButton("Upload Materials", Icons.upload_file),
-
-                  _menuButton("Session History", Icons.history),
-
-                  _menuButton("Feedback", Icons.star_outline),
+                  _menuButton("Session Requests", Icons.class_, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SessionRequestsScreen(),
+                      ),
+                    );
+                  }),
+                  _menuButton("Upload Materials", Icons.upload_file, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const UploadMaterialsScreen(),
+                      ),
+                    );
+                  }),
+                  _menuButton("Session History", Icons.history, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SessionHistoryScreen(),
+                      ),
+                    );
+                  }),
+                  _menuButton("Feedback", Icons.star_outline, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FeedbackTutorScreen(),
+                      ),
+                    );
+                  }),
                 ],
               ),
 
@@ -171,90 +107,55 @@ class _TutorDashboardState extends State<TutorDashboard> {
         ),
       ),
 
-      // bottom navigation bar
-      bottomNavigationBar: BottomNavigationBar(
+      // ── Bottom Navigation ──
+      bottomNavigationBar: BottomNavBar(
         currentIndex: _selectedIndex,
-
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-
-        selectedItemColor: const Color(0xfff4a24c),
-        unselectedItemColor: Colors.grey,
-
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notifications",
-          ),
-
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        onTap: (index) => setState(() => _selectedIndex = index),
+        tabActions: [
+          () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const TutorDashboard()),
+            );
+          },
+          () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const TutorNotificationScreen(),
+              ),
+            );
+          },
+          () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const TutorProfileScreen()),
+            );
+          },
         ],
       ),
     );
   }
 
-  // stats
-  Widget _statCard(String number, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-
-      child: Column(
-        children: [
-          Text(
-            number,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xff3d6fa5),
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // menu buttons
-  Widget _menuButton(String title, IconData icon) {
+  Widget _menuButton(String title, IconData icon, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () {},
-
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xff3d6fa5),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(15),
         ),
-
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 40),
-
+            Icon(icon, color: Colors.white, size: 35),
             const SizedBox(height: 10),
-
             Text(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],

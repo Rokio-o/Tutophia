@@ -1,10 +1,11 @@
-// successful registration
 import 'package:flutter/material.dart';
-import 'StudentAccess/dashboard-student.dart';
+import 'package:tutophia/login.dart';
 
 class SuccessfulRegistration extends StatefulWidget {
+  const SuccessfulRegistration({super.key});
+
   @override
-  _SuccessfulRegistrationState createState() => _SuccessfulRegistrationState();
+  State<SuccessfulRegistration> createState() => _SuccessfulRegistrationState();
 }
 
 class _SuccessfulRegistrationState extends State<SuccessfulRegistration> {
@@ -12,67 +13,63 @@ class _SuccessfulRegistrationState extends State<SuccessfulRegistration> {
   void initState() {
     super.initState();
 
-    // loading delay
-    Future.delayed(Duration(seconds: 5), () {
-      // navigate to dashboard screen after delay for splash screen
+    // Loading delay before redirecting to login
+    Future.delayed(const Duration(seconds: 5), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => StudentDashboard()),
+        MaterialPageRoute(builder: (context) => LoginScreen()),
       );
     });
   }
 
-  // visual design
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // gradient background for the splash screen
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(color: Color(0xFFF9AB55)),
 
-        // illustration, indicator,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // registered illustration
+            // Registered illustration
             Image.asset(
               'assets/images/registered-illustration.png',
               width: 200,
               height: 200,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Account Created Title
-            Text(
+            const Text(
               'ACCOUNT CREATED',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Arimo',
                 fontSize: 24,
-                color: Color.fromARGB(255, 255, 255, 255),
+                color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
 
             // Loading message
-            Text(
-              'TUTOPHIA is now bringing you to the Dashboard. Please wait a moment.',
+            const Text(
+              'Your account has been successfully created.\nPlease log in to continue.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Arial',
                 fontSize: 14,
-                color: Color.fromARGB(255, 255, 255, 255),
+                color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
 
             const SizedBox(height: 40),
 
-            // loading indicator
-            CircularProgressIndicator(
+            // Loading indicator
+            const CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF386FA4)),
               strokeWidth: 3,
             ),

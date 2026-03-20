@@ -1,0 +1,261 @@
+import 'package:flutter/material.dart';
+
+// ── Original Request Card ─────────────────────────────────────────────────────
+
+class RequestCard extends StatelessWidget {
+  final String name;
+  final String course;
+  final String image;
+  final bool hasImage;
+  final String buttonText;
+  final VoidCallback onButtonTap;
+
+  const RequestCard({
+    super.key,
+    required this.name,
+    required this.course,
+    required this.buttonText,
+    required this.onButtonTap,
+    this.image = '',
+    this.hasImage = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(235, 255, 226, 195),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.15),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // Avatar
+              Container(
+                width: 70,
+                height: 70,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                child: hasImage && image.isNotEmpty
+                    ? ClipOval(
+                        child: Image.asset(
+                          image,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => const Icon(
+                            Icons.person,
+                            size: 45,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      )
+                    : const Icon(Icons.person, size: 45, color: Colors.grey),
+              ),
+
+              const SizedBox(width: 15),
+
+              // Name + Course
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      course,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 15),
+
+          // Action button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onButtonTap,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xff3d6fa5),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                buttonText,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Cancelled Request Card ────────────────────────────────────────────────────
+
+class CancelledRequestCard extends StatelessWidget {
+  final String name;
+  final String course;
+  final String image;
+  final bool hasImage;
+  final VoidCallback? onTap;
+
+  const CancelledRequestCard({
+    super.key,
+    required this.name,
+    required this.course,
+    this.image = '',
+    this.hasImage = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(235, 197, 195, 193),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.15),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // Avatar (greyed out)
+              Container(
+                width: 70,
+                height: 70,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                child: ColorFiltered(
+                  colorFilter: const ColorFilter.matrix([
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                  ]),
+                  child: hasImage && image.isNotEmpty
+                      ? ClipOval(
+                          child: Image.asset(
+                            image,
+                            fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) => const Icon(
+                              Icons.person,
+                              size: 45,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.person, size: 45, color: Colors.grey),
+                ),
+              ),
+
+              const SizedBox(width: 15),
+
+              // Name + Course (muted)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black45,
+                      ),
+                    ),
+                    Text(
+                      course,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black38,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 15),
+
+          // Cancelled badge button (non-interactive)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onTap,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 239, 28, 13),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                "Cancelled",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

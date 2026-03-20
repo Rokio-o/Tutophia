@@ -207,7 +207,7 @@ class LoginScreen extends StatelessWidget {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => StudentDashboard(),
+                                builder: (context) => TutorDashboard(),
                               ),
                             );
                           },

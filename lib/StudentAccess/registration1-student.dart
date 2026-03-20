@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:tutophia/login.dart';
 import 'package:tutophia/StudentAccess/registration2-student.dart';
 import 'package:tutophia/registration-type.dart';
@@ -11,185 +13,309 @@ class StudentRegistration1 extends StatefulWidget {
 }
 
 class _StudentRegistration1State extends State<StudentRegistration1> {
-  // Form key for validation
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers for text fields
-  final TextEditingController firstNameController = TextEditingController();
-  final TextEditingController lastNameController = TextEditingController();
-  final TextEditingController addressController = TextEditingController();
-  final TextEditingController programController = TextEditingController();
-  final TextEditingController studentDescriptionController =
-      TextEditingController();
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
+  final addressController = TextEditingController();
+  final universityController = TextEditingController();
+  final programController = TextEditingController();
+  final studentDescriptionController = TextEditingController();
+  final emailController = TextEditingController();
+  final usernameController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
-  // Dropdown values
-  String? gender;
-  String? department;
-  String? year;
+  String? gender, department, year;
   DateTime? selectedDate;
   int? age;
+  bool isPasswordVisible = false, isConfirmPasswordVisible = false;
 
-  // Validation flags
-  bool isPasswordVisible = false;
-  bool isConfirmPasswordVisible = false;
+  // ── Profile image state ──────────────────────────────────────────────────────
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
 
-  final OutlineInputBorder borderStyle = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(10),
-    borderSide: BorderSide(color: const Color.fromARGB(255, 0, 0, 0)),
-  );
-
-  // Password validation function
-  String? validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Password is required';
-    }
-    if (value.length < 8) {
-      return 'Password must be at least 8 characters';
-    }
-    if (!value.contains(RegExp(r'[A-Z]'))) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!value.contains(RegExp(r'[0-9]'))) {
-      return 'Password must contain at least one number';
-    }
-    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
-      return 'Password must contain at least one special character';
-    }
-    return null;
-  }
-
-  // Confirm password validation
-  String? validateConfirmPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please confirm your password';
-    }
-    if (value != passwordController.text) {
-      return 'Passwords do not match';
-    }
-    return null;
-  }
-
-  // Username validation
-  String? validateUsername(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Username is required';
-    }
-    if (value.length < 4) {
-      return 'Username must be at least 4 characters';
-    }
-    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-      return 'Username can only contain letters, numbers, and underscores';
-    }
-    return null;
-  }
-
-  // Name validation
-  String? validateName(String? value, String fieldName) {
-    if (value == null || value.isEmpty) {
-      return '$fieldName is required';
-    }
-    if (value.length < 2) {
-      return '$fieldName must be at least 2 characters';
-    }
-    if (!RegExp(r'^[a-zA-Z\s\-]+$').hasMatch(value)) {
-      return '$fieldName can only contain letters, spaces, and hyphens';
-    }
-    return null;
-  }
-
-  // Address validation
-  String? validateAddress(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Address is required';
-    }
-    if (value.length < 5) {
-      return 'Please enter a complete address';
-    }
-    return null;
-  }
-
-  // Program validation
-  String? validateProgram(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Program is required';
-    }
-    if (value.length < 2) {
-      return 'Please enter a valid program';
-    }
-    return null;
-  }
-
-  // Student description validation
-  String? validateDescription(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Student description is required';
-    }
-    if (value.length < 20) {
-      return 'Description must be at least 20 characters';
-    }
-    if (value.length > 500) {
-      return 'Description must not exceed 500 characters';
-    }
-    return null;
-  }
-
-  // Dropdown validation
-  String? validateDropdown(String? value, String fieldName) {
-    if (value == null || value.isEmpty) {
-      return 'Please select $fieldName';
-    }
-    return null;
-  }
-
-  // Age validation
-  String? validateAge() {
-    if (age == null) {
-      return 'Age is required';
-    }
-    if (age! < 15 || age! > 100) {
-      return 'Age must be between 15 and 100';
-    }
-    return null;
-  }
+  static const _blue = Color(0xff3d6fa5);
 
   @override
   void dispose() {
-    // Dispose controllers
-    firstNameController.dispose();
-    lastNameController.dispose();
-    addressController.dispose();
-    programController.dispose();
-    studentDescriptionController.dispose();
-    usernameController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
+    for (final c in [
+      firstNameController,
+      lastNameController,
+      addressController,
+      universityController,
+      programController,
+      studentDescriptionController,
+      emailController,
+      usernameController,
+      passwordController,
+      confirmPasswordController,
+    ]) {
+      c.dispose();
+    }
     super.dispose();
   }
+
+  // ── Image Picker ─────────────────────────────────────────────────────────────
+
+  Future<void> _pickImage(ImageSource source) async {
+    final XFile? picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 85,
+      maxWidth: 600,
+    );
+    if (picked != null) {
+      setState(() => _profileImage = File(picked.path));
+    }
+  }
+
+  void _showImageSourceSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Sheet handle
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Profile Photo',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFE8F0FE),
+                  child: Icon(Icons.camera_alt, color: _blue),
+                ),
+                title: const Text('Take a photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFE8F0FE),
+                  child: Icon(Icons.photo_library, color: _blue),
+                ),
+                title: const Text('Choose from gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              if (_profileImage != null)
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFFFEBEE),
+                    child: Icon(Icons.delete_outline, color: Colors.red),
+                  ),
+                  title: const Text(
+                    'Remove photo',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() => _profileImage = null);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  OutlineInputBorder _border(Color color, {double width = 1}) =>
+      OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: color, width: width),
+      );
+
+  InputDecoration _dec(String hint, {Widget? suffix, EdgeInsets? padding}) =>
+      InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey.shade400),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            padding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+        border: _border(Colors.black),
+        enabledBorder: _border(Colors.black),
+        focusedBorder: _border(_blue, width: 2),
+        errorBorder: _border(Colors.red),
+        focusedErrorBorder: _border(Colors.red, width: 2),
+      );
+
+  Widget _label(String text, {bool required = true}) => Padding(
+    padding: const EdgeInsets.only(bottom: 5),
+    child: RichText(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          color: Colors.black,
+          fontSize: 14,
+        ),
+        children: required
+            ? [
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ]
+            : [],
+      ),
+    ),
+  );
+
+  Widget _section(String title) => Padding(
+    padding: const EdgeInsets.only(bottom: 15),
+    child: Text(
+      title,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
+    ),
+  );
+
+  Widget _field(
+    String label,
+    TextEditingController controller,
+    String hint, {
+    String? Function(String?)? validator,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    bool required = true,
+    EdgeInsets? padding,
+  }) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _label(label, required: required),
+      TextFormField(
+        controller: controller,
+        validator: validator,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        decoration: _dec(hint, padding: padding),
+      ),
+    ],
+  );
+
+  Widget _dropdown(
+    String label,
+    String hint,
+    String? value,
+    List<DropdownMenuItem<String>> items,
+    void Function(String?) onChanged,
+    String? Function(String?)? validator,
+  ) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _label(label),
+      DropdownButtonFormField<String>(
+        value: value,
+        decoration: _dec(hint).copyWith(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 5,
+          ),
+        ),
+        icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+        items: items,
+        onChanged: onChanged,
+        validator: validator,
+      ),
+    ],
+  );
+
+  // ── Validators ───────────────────────────────────────────────────────────────
+
+  String? validateName(String? v, String field) {
+    if (v == null || v.isEmpty) return '$field is required';
+    if (v.length < 2) return '$field must be at least 2 characters';
+    if (!RegExp(r'^[a-zA-Z\s\-]+$').hasMatch(v))
+      return '$field can only contain letters, spaces, and hyphens';
+    return null;
+  }
+
+  String? validateEmail(String? v) {
+    if (v == null || v.isEmpty) return 'Email address is required';
+    if (!RegExp(
+      r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+(\.[a-zA-Z]+)?$',
+    ).hasMatch(v))
+      return 'Please enter a valid email address';
+    return null;
+  }
+
+  String? validateUsername(String? v) {
+    if (v == null || v.isEmpty) return 'Username is required';
+    if (v.length < 4) return 'Username must be at least 4 characters';
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(v))
+      return 'Username can only contain letters, numbers, and underscores';
+    return null;
+  }
+
+  String? validatePassword(String? v) {
+    if (v == null || v.isEmpty) return 'Password is required';
+    if (v.length < 8) return 'Password must be at least 8 characters';
+    if (!v.contains(RegExp(r'[A-Z]')))
+      return 'Password must contain at least one uppercase letter';
+    if (!v.contains(RegExp(r'[0-9]')))
+      return 'Password must contain at least one number';
+    if (!v.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')))
+      return 'Password must contain at least one special character';
+    return null;
+  }
+
+  String? validateConfirmPassword(String? v) {
+    if (v == null || v.isEmpty) return 'Please confirm your password';
+    if (v != passwordController.text) return 'Passwords do not match';
+    return null;
+  }
+
+  String? validateAge() {
+    if (age == null) return 'Age is required';
+    if (age! < 15 || age! > 100) return 'Age must be between 15 and 100';
+    return null;
+  }
+
+  // ── Build ────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-
-      // back arrow (redirect to login screen)
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => RegistrationType()),
-            );
-          },
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => RegistrationType()),
+          ),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Form(
@@ -197,383 +323,176 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // create account text title
               const Text(
-                "CREATE ACCOUNT",
+                'CREATE ACCOUNT',
                 style: TextStyle(
                   fontFamily: 'Arimo',
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xff3d6fa5),
+                  color: _blue,
                 ),
               ),
-
               const SizedBox(height: 5),
-
-              // student registration subtitle
               const Text(
-                "Student Registration",
+                'Student Registration',
                 style: TextStyle(color: Colors.black54, fontFamily: 'Arial'),
               ),
-
               const SizedBox(height: 25),
 
-              // profile picture decoration only
+              // ── Profile Picture ──────────────────────────────────────────────
               Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      height: 70,
-                      width: 70,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black54),
+                child: GestureDetector(
+                  onTap: _showImageSourceSheet,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Stack(
+                        children: [
+                          // Avatar circle
+                          Container(
+                            height: 70,
+                            width: 70,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.black54),
+                              color: Colors.grey.shade100,
+                            ),
+                            child: ClipOval(
+                              child: _profileImage != null
+                                  ? Image.file(
+                                      _profileImage!,
+                                      fit: BoxFit.cover,
+                                      width: 70,
+                                      height: 70,
+                                    )
+                                  : const Icon(
+                                      Icons.person,
+                                      size: 40,
+                                      color: Colors.black38,
+                                    ),
+                            ),
+                          ),
+                          // Edit badge
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              height: 22,
+                              width: 22,
+                              decoration: const BoxDecoration(
+                                color: _blue,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.edit,
+                                size: 13,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Center(child: Icon(Icons.add)),
-                    ),
-
-                    const SizedBox(width: 15),
-
-                    const Text(
-                      " Add Profile Picture",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(width: 15),
+                      Text(
+                        _profileImage != null
+                            ? 'Change Profile Picture'
+                            : 'Add Profile Picture',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 25),
 
-              // Personal Information text
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Personal Information",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                ],
-              ),
+              // ── Personal Information ──
+              _section('Personal Information'),
 
-              // full name row (first name, last name)
               Row(
                 children: [
-                  // First Name
                   Expanded(
                     flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RichText(
-                          text: const TextSpan(
-                            text: "First Name",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: " *",
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        TextFormField(
-                          controller: firstNameController,
-                          validator: (value) =>
-                              validateName(value, 'First name'),
-                          decoration: InputDecoration(
-                            border: borderStyle,
-                            enabledBorder: borderStyle,
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xff3d6fa5),
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1,
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 15,
-                            ),
-                            hintText: "Enter First Name",
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                        ),
-                      ],
+                    child: _field(
+                      'First Name',
+                      firstNameController,
+                      'Enter First Name',
+                      validator: (v) => validateName(v, 'First name'),
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
-                  // Last Name
                   Expanded(
                     flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RichText(
-                          text: const TextSpan(
-                            text: "Last Name",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: " *",
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        TextFormField(
-                          controller: lastNameController,
-                          validator: (value) =>
-                              validateName(value, 'Last name'),
-                          decoration: InputDecoration(
-                            border: borderStyle,
-                            enabledBorder: borderStyle,
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xff3d6fa5),
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1,
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                            hintText: "Enter Last Name",
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 15,
-                            ),
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                        ),
-                      ],
+                    child: _field(
+                      'Last Name',
+                      lastNameController,
+                      'Enter Last Name',
+                      validator: (v) => validateName(v, 'Last name'),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
 
-              // Gender drop down button
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Label with asterisk
-                  RichText(
-                    text: const TextSpan(
-                      text: "Gender",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontSize: 14,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: " *",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-
-                  // gender dropdown
-                  DropdownButtonFormField(
-                    decoration: InputDecoration(
-                      border: borderStyle,
-                      enabledBorder: borderStyle,
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xff3d6fa5),
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 2,
-                        ),
-                      ),
-                      hintText: 'Select Gender',
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
-                    items: const [
-                      DropdownMenuItem(value: "Male", child: Text("Male")),
-                      DropdownMenuItem(value: "Female", child: Text("Female")),
-                      DropdownMenuItem(value: "Others", child: Text("Others")),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        gender = value;
-                      });
-                    },
-                    value: gender,
-                    validator: (value) => validateDropdown(value, 'gender'),
-                  ),
+              _dropdown(
+                'Gender',
+                'Select Gender',
+                gender,
+                const [
+                  DropdownMenuItem(value: 'Male', child: Text('Male')),
+                  DropdownMenuItem(value: 'Female', child: Text('Female')),
+                  DropdownMenuItem(value: 'Others', child: Text('Others')),
                 ],
+                (v) => setState(() => gender = v),
+                (v) => v == null ? 'Please select gender' : null,
               ),
               const SizedBox(height: 20),
 
-              // birthdate and age row
+              // Birthdate + Age row
               Row(
                 children: [
-                  // birthdate - calendar
                   Expanded(
                     flex: 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        RichText(
-                          text: const TextSpan(
-                            text: "Birthdate",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                              fontSize: 14,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: " *",
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 5),
+                        _label('Birthdate'),
                         TextFormField(
                           readOnly: true,
                           controller: TextEditingController(
                             text: selectedDate == null
-                                ? ""
-                                : "${selectedDate!.month}/${selectedDate!.day}/${selectedDate!.year}",
+                                ? ''
+                                : '${selectedDate!.month}/${selectedDate!.day}/${selectedDate!.year}',
                           ),
-                          decoration: InputDecoration(
-                            border: borderStyle,
-                            enabledBorder: borderStyle,
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xff3d6fa5),
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1,
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 15,
-                            ),
-                            hintText: "Birthday",
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                            suffixIcon: const Icon(
+                          validator: (_) => selectedDate == null
+                              ? 'Birthdate is required'
+                              : null,
+                          decoration: _dec(
+                            'Birthday',
+                            suffix: const Icon(
                               Icons.calendar_today,
                               color: Colors.grey,
                               size: 20,
                             ),
-                            filled: true,
-                            fillColor: Colors.white,
                           ),
-                          validator: (value) {
-                            if (selectedDate == null) {
-                              return 'Birthdate is required';
-                            }
-                            return null;
-                          },
                           onTap: () async {
-                            DateTime? pickedDate = await showDatePicker(
+                            final picked = await showDatePicker(
                               context: context,
                               initialDate: DateTime(2000),
                               firstDate: DateTime(1950),
                               lastDate: DateTime.now(),
                             );
-
-                            if (pickedDate != null) {
+                            if (picked != null) {
                               setState(() {
-                                selectedDate = pickedDate;
-
-                                // age calculation
-                                DateTime today = DateTime.now();
-                                age = today.year - pickedDate.year;
-                                if (today.month < pickedDate.month ||
-                                    (today.month == pickedDate.month &&
-                                        today.day < pickedDate.day)) {
+                                selectedDate = picked;
+                                final today = DateTime.now();
+                                age = today.year - picked.year;
+                                if (today.month < picked.month ||
+                                    (today.month == picked.month &&
+                                        today.day < picked.day))
                                   age = age! - 1;
-                                }
                               });
                             }
                           },
@@ -581,72 +500,27 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
                       ],
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
-                  // age (auto compute)
                   Expanded(
                     flex: 1,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        RichText(
-                          text: const TextSpan(
-                            text: "Age",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                              fontSize: 14,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: " *",
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 5),
+                        _label('Age'),
                         TextFormField(
                           readOnly: true,
                           controller: TextEditingController(
-                            text: age == null ? "" : age.toString(),
+                            text: age == null ? '' : age.toString(),
                           ),
                           textAlign: TextAlign.center,
-                          decoration: InputDecoration(
-                            border: borderStyle,
-                            enabledBorder: borderStyle,
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xff3d6fa5),
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1,
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
+                          validator: (_) => validateAge(),
+                          decoration: _dec(
+                            'Age',
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 4,
                               vertical: 15,
                             ),
-                            hintText: "Age",
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                            filled: true,
-                            fillColor: Colors.white,
                           ),
-                          validator: (value) => validateAge(),
                         ),
                       ],
                     ),
@@ -655,642 +529,191 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
               ),
               const SizedBox(height: 20),
 
-              // address text area
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: const TextSpan(
-                      text: "Address",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontSize: 14,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: " *",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  TextFormField(
-                    controller: addressController,
-                    maxLines: 3,
-                    validator: validateAddress,
-                    decoration: InputDecoration(
-                      border: borderStyle,
-                      enabledBorder: borderStyle,
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xff3d6fa5),
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 10,
-                      ),
-                      hintText: "Enter your address (City / Area)",
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                  ),
-                ],
+              _field(
+                'Address',
+                addressController,
+                'Enter your address (City / Area)',
+                validator: (v) => (v == null || v.isEmpty)
+                    ? 'Address is required'
+                    : v.length < 5
+                    ? 'Please enter a complete address'
+                    : null,
+                maxLines: 3,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
               ),
               const SizedBox(height: 30),
 
-              // academic credentials text
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Academic Credentials",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                ],
-              ),
+              // ── Academic Credentials ──
+              _section('Academic Credentials'),
 
-              // department label and dropdownbox
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: const TextSpan(
-                      text: "Department",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontSize: 14,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: " *",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-
-                  // department dropdown
-                  DropdownButtonFormField(
-                    decoration: InputDecoration(
-                      border: borderStyle,
-                      enabledBorder: borderStyle,
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xff3d6fa5),
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 2,
-                        ),
-                      ),
-                      hintText: 'Select Department',
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
-                    items: const [
-                      DropdownMenuItem(
-                        value: "CEA",
-                        child: Text("College of Eng & Arch"),
-                      ),
-                      DropdownMenuItem(
-                        value: "CCS",
-                        child: Text("College of Computer Studies"),
-                      ),
-                      DropdownMenuItem(
-                        value: "CE",
-                        child: Text("College of Education"),
-                      ),
-                      DropdownMenuItem(
-                        value: "CA",
-                        child: Text("College of Arts"),
-                      ),
-                      DropdownMenuItem(
-                        value: "CB",
-                        child: Text("College of Business"),
-                      ),
-                      DropdownMenuItem(
-                        value: "CN",
-                        child: Text("College of Nursing"),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        department = value;
-                      });
-                    },
-                    value: department,
-                    validator: (value) => validateDropdown(value, 'department'),
-                  ),
-                ],
+              _field(
+                'University / Institution',
+                universityController,
+                'Enter your current university/institution',
+                validator: (v) => (v == null || v.isEmpty || v.length < 2)
+                    ? 'University/Institution is required'
+                    : null,
               ),
               const SizedBox(height: 20),
 
-              // program text label and field
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: const TextSpan(
-                      text: "Program",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontSize: 14,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: " *",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ],
-                    ),
+              _dropdown(
+                'Department',
+                'Select Department',
+                department,
+                const [
+                  DropdownMenuItem(
+                    value: 'CEA',
+                    child: Text('College of Eng & Arch'),
                   ),
-                  const SizedBox(height: 5),
-                  TextFormField(
-                    controller: programController,
-                    validator: validateProgram,
-                    decoration: InputDecoration(
-                      border: borderStyle,
-                      enabledBorder: borderStyle,
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xff3d6fa5),
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 15,
-                      ),
-                      hintText: "Enter Program",
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
+                  DropdownMenuItem(
+                    value: 'CCS',
+                    child: Text('College of Computer Studies'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'CE',
+                    child: Text('College of Education'),
+                  ),
+                  DropdownMenuItem(value: 'CA', child: Text('College of Arts')),
+                  DropdownMenuItem(
+                    value: 'CB',
+                    child: Text('College of Business'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'CN',
+                    child: Text('College of Nursing'),
                   ),
                 ],
+                (v) => setState(() => department = v),
+                (v) => v == null ? 'Please select department' : null,
               ),
               const SizedBox(height: 20),
 
-              // year spent drop down
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: const TextSpan(
-                      text: "Year Spent",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontSize: 14,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: " *",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-
-                  // year spent dropdown
-                  DropdownButtonFormField(
-                    decoration: InputDecoration(
-                      border: borderStyle,
-                      enabledBorder: borderStyle,
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xff3d6fa5),
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 2,
-                        ),
-                      ),
-                      hintText: 'Select Year',
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
-                    items: const [
-                      DropdownMenuItem(
-                        value: "1st Year",
-                        child: Text("1st Year"),
-                      ),
-                      DropdownMenuItem(
-                        value: "2nd Year",
-                        child: Text("2nd Year"),
-                      ),
-                      DropdownMenuItem(
-                        value: "3rd Year",
-                        child: Text("3rd Year"),
-                      ),
-                      DropdownMenuItem(
-                        value: "4th Year",
-                        child: Text("4th Year"),
-                      ),
-                      DropdownMenuItem(
-                        value: "5th Year +",
-                        child: Text("5th Year +"),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        year = value;
-                      });
-                    },
-                    value: year,
-                    validator: (value) => validateDropdown(value, 'year spent'),
-                  ),
-                ],
+              _field(
+                'Program',
+                programController,
+                'Enter Program',
+                validator: (v) => (v == null || v.isEmpty || v.length < 2)
+                    ? 'Program is required'
+                    : null,
               ),
               const SizedBox(height: 20),
 
-              // student description text area
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Label with asterisk
-                  RichText(
-                    text: const TextSpan(
-                      text: "Student Description",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: " *",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Multi-line TextField
-                  TextFormField(
-                    controller: studentDescriptionController,
-                    maxLines: 4,
-                    validator: validateDescription,
-                    decoration: InputDecoration(
-                      border: borderStyle,
-                      enabledBorder: borderStyle,
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xff3d6fa5),
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 10,
-                      ),
-                      hintText:
-                          "Provide a short description about yourself as a student",
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
+              _dropdown(
+                'Year Spent',
+                'Select Year',
+                year,
+                const [
+                  DropdownMenuItem(value: '1st Year', child: Text('1st Year')),
+                  DropdownMenuItem(value: '2nd Year', child: Text('2nd Year')),
+                  DropdownMenuItem(value: '3rd Year', child: Text('3rd Year')),
+                  DropdownMenuItem(value: '4th Year', child: Text('4th Year')),
+                  DropdownMenuItem(
+                    value: '5th Year +',
+                    child: Text('5th Year +'),
                   ),
                 ],
+                (v) => setState(() => year = v),
+                (v) => v == null ? 'Please select year spent' : null,
+              ),
+              const SizedBox(height: 20),
+
+              _field(
+                'Student Description',
+                studentDescriptionController,
+                'Provide a short description about yourself as a student',
+                validator: (v) {
+                  if (v == null || v.isEmpty)
+                    return 'Student description is required';
+                  if (v.length < 20)
+                    return 'Description must be at least 20 characters';
+                  if (v.length > 500)
+                    return 'Description must not exceed 500 characters';
+                  return null;
+                },
+                maxLines: 4,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
               ),
               const SizedBox(height: 30),
 
-              // Account Creation section
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Account Creation",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                ],
-              ),
+              // ── Account Creation ──
+              _section('Account Creation'),
 
-              // Username field
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: const TextSpan(
-                      text: "Username",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontSize: 14,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: " *",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  TextFormField(
-                    controller: usernameController,
-                    validator: validateUsername,
-                    decoration: InputDecoration(
-                      border: borderStyle,
-                      enabledBorder: borderStyle,
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xff3d6fa5),
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 15,
-                      ),
-                      hintText: "Enter your username",
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                  ),
-                ],
+              _field(
+                'Email Address',
+                emailController,
+                'Enter your email address',
+                validator: validateEmail,
+                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 20),
 
-              // Password field
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: const TextSpan(
-                      text: "Password",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontSize: 14,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: " *",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  TextFormField(
-                    controller: passwordController,
-                    obscureText: !isPasswordVisible,
-                    validator: validatePassword,
-                    decoration: InputDecoration(
-                      border: borderStyle,
-                      enabledBorder: borderStyle,
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xff3d6fa5),
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 15,
-                      ),
-                      hintText: "Enter your password",
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      filled: true,
-                      fillColor: Colors.white,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          isPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.grey,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            isPasswordVisible = !isPasswordVisible;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                ],
+              _field(
+                'Username',
+                usernameController,
+                'Enter your username',
+                validator: validateUsername,
               ),
               const SizedBox(height: 20),
 
-              // Confirm Password field
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: const TextSpan(
-                      text: "Confirm Password",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontSize: 14,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: " *",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ],
+              _label('Password'),
+              TextFormField(
+                controller: passwordController,
+                obscureText: !isPasswordVisible,
+                validator: validatePassword,
+                decoration: _dec(
+                  'Enter your password',
+                  suffix: IconButton(
+                    icon: Icon(
+                      isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: Colors.grey,
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        setState(() => isPasswordVisible = !isPasswordVisible),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              _label('Confirm Password'),
+              TextFormField(
+                controller: confirmPasswordController,
+                obscureText: !isConfirmPasswordVisible,
+                validator: validateConfirmPassword,
+                decoration: _dec(
+                  'Confirm your password',
+                  suffix: IconButton(
+                    icon: Icon(
+                      isConfirmPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: Colors.grey,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(
+                      () =>
+                          isConfirmPasswordVisible = !isConfirmPasswordVisible,
                     ),
                   ),
-                  const SizedBox(height: 5),
-                  TextFormField(
-                    controller: confirmPasswordController,
-                    obscureText: !isConfirmPasswordVisible,
-                    validator: validateConfirmPassword,
-                    decoration: InputDecoration(
-                      border: borderStyle,
-                      enabledBorder: borderStyle,
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Color(0xff3d6fa5),
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: Colors.red,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 15,
-                      ),
-                      hintText: "Confirm your password",
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      filled: true,
-                      fillColor: Colors.white,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          isConfirmPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.grey,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            isConfirmPasswordVisible =
-                                !isConfirmPasswordVisible;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 30),
 
-              // next button
+              // ── Next Button ──────────────────────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff3d6fa5),
+                    backgroundColor: _blue,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -1298,7 +721,6 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
                   ),
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      // All validations passed
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
@@ -1308,18 +730,16 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
                           duration: Duration(seconds: 2),
                         ),
                       );
-
-                      // Navigate to next page after brief delay
-                      Future.delayed(const Duration(seconds: 2), () {
-                        Navigator.push(
+                      Future.delayed(
+                        const Duration(seconds: 2),
+                        () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => StudentRegistration2(),
+                            builder: (_) => StudentRegistration2(),
                           ),
-                        );
-                      });
+                        ),
+                      );
                     } else {
-                      // Show error message
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
@@ -1332,7 +752,7 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
                     }
                   },
                   child: const Text(
-                    "NEXT",
+                    'NEXT',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -1341,28 +761,23 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
 
-              // login text
               Center(
                 child: GestureDetector(
-                  onTap: () {
-                    // Navigate to login screen
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
-                    );
-                  },
+                  onTap: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => LoginScreen()),
+                  ),
                   child: RichText(
                     text: const TextSpan(
-                      text: "Already have an account? ",
+                      text: 'Already have an account? ',
                       style: TextStyle(color: Colors.black54, fontSize: 14),
                       children: [
                         TextSpan(
-                          text: "Login",
+                          text: 'Login',
                           style: TextStyle(
-                            color: Color(0xff3d6fa5),
+                            color: _blue,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
