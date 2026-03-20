@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'menu-my_booking.dart';
+import 'menu-find_tutors_student.dart';
+import 'menu-feedback.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -153,7 +156,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
               const SizedBox(height: 25),
 
-              // menu option grid
+              // menu option gridi
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -162,13 +165,35 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 crossAxisSpacing: 15,
                 childAspectRatio: 1.2,
                 children: [
-                  _menuButton("Find Tutors", Icons.search),
+                  _menuButton("Find Tutors", Icons.search, () {
+                    //Navogate to Find Tutors Screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => FindTutors()),
+                    );
+                  }),
 
-                  _menuButton("My Bookings", Icons.calendar_today),
+                  _menuButton("My Bookings", Icons.calendar_today, () {
+                    //Navigate to My Bookings Screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StudentBookingsScreen(),
+                      ),
+                    );
+                  }),
 
-                  _menuButton("Session Materials", Icons.menu_book),
+                  _menuButton("Session Materials", Icons.menu_book, () {
+                    // Will add function later
+                  }),
 
-                  _menuButton("Feedback", Icons.feedback),
+                  _menuButton("Feedback", Icons.feedback, () {
+                    //Navigate to Feedback Screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => FeedbackScreen()),
+                    );
+                  }),
                 ],
               ),
 
@@ -259,9 +284,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   // menu button widget
-  Widget _menuButton(String title, IconData icon) {
+  Widget _menuButton(String title, IconData icon, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () {},
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xff3d6fa5),
@@ -271,9 +296,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 40, color: Colors.white),
-
             const SizedBox(height: 10),
-
             Text(
               title,
               textAlign: TextAlign.center,
