@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/models/tutor-model/session-history-data.dart';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -6,30 +7,7 @@ const Color kSessionBlue = Color(0xFF3D6FA5);
 const Color kSessionBeige = Color(0xFFFEF7F0);
 const Color kSessionBorder = Color(0xFFE0E0E0);
 
-// ── SessionStudentData ────────────────────────────────────────────────────────
-
-class SessionStudentData {
-  final String id;
-  final String name;
-  final String program;
-  final String imagePath;
-
-  const SessionStudentData({
-    required this.id,
-    required this.name,
-    required this.program,
-    this.imagePath = '',
-  });
-}
-
 // ── SessionHistoryCard ────────────────────────────────────────────────────────
-// Card with two states:
-//   • Collapsed — shows name, program, and a "Select Action" link
-//   • Expanded  — shows name, program, and two action buttons:
-//                 "Give feedback" and "Give materials"
-//
-// Tapping "Select Action" expands the card.
-// [onGiveFeedback] and [onGiveMaterials] are called from the expanded state.
 
 class SessionHistoryCard extends StatefulWidget {
   final SessionStudentData student;

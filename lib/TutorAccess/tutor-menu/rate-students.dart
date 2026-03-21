@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:tutophia/widgets/tutor-widgets/feedback-to-rate-card.dart';
 import 'package:tutophia/widgets/tutor-widgets/header-tutor-wdgt.dart';
+import 'package:tutophia/models/tutor-model/feedback-tutor-data.dart';
+import 'package:tutophia/widgets/tutor-widgets/feedback-to-rate-card.dart';
+import 'package:tutophia/widgets/tutor-widgets/feedback_constants.dart';
 
 // ── RateStudentScreen ─────────────────────────────────────────────────────────
 
@@ -45,7 +47,6 @@ class _RateStudentScreenState extends State<RateStudentScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // ── AppBar ─────────────────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -60,12 +61,12 @@ class _RateStudentScreenState extends State<RateStudentScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ────────────────────────────────────────────────────
+            // ── Header ────────────────────────────────────────────────────────
             const HeaderTutorWdgt.feedback(),
 
             const SizedBox(height: 32),
 
-            // ── Student Avatar + Name ─────────────────────────────────────
+            // ── Student Avatar + Name ─────────────────────────────────────────
             Center(
               child: Column(
                 children: [
@@ -90,7 +91,7 @@ class _RateStudentScreenState extends State<RateStudentScreen> {
 
             const SizedBox(height: 28),
 
-            // ── Rate the student ──────────────────────────────────────────
+            // ── Rate the student ──────────────────────────────────────────────
             const Text(
               'Rate the student performance',
               style: TextStyle(
@@ -101,7 +102,6 @@ class _RateStudentScreenState extends State<RateStudentScreen> {
             ),
             const SizedBox(height: 10),
 
-            // Interactive star rating
             Row(
               children: List.generate(5, (i) {
                 final starIndex = i + 1;
@@ -132,7 +132,7 @@ class _RateStudentScreenState extends State<RateStudentScreen> {
 
             const SizedBox(height: 24),
 
-            // ── Add a comment ─────────────────────────────────────────────
+            // ── Add a comment ─────────────────────────────────────────────────
             const Text(
               'Add a comment',
               style: TextStyle(
@@ -166,7 +166,7 @@ class _RateStudentScreenState extends State<RateStudentScreen> {
 
             const Spacer(),
 
-            // ── Go back / Save buttons ─────────────────────────────────────
+            // ── Go back / Save buttons ────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.only(bottom: 24),
               child: Row(

@@ -4,10 +4,12 @@ import 'package:tutophia/widgets/tutor-widgets/header-tutor-wdgt.dart';
 import 'package:tutophia/TutorAccess/dashboard-tutor.dart';
 import 'package:tutophia/TutorAccess/notification-tutor.dart';
 import 'package:tutophia/TutorAccess/profile-tutor.dart';
-import 'package:tutophia/widgets/tutor-widgets/feedback-to-rate-card.dart';
+import 'package:tutophia/widgets/tutor-widgets/session-history-card.dart';
 import 'package:tutophia/TutorAccess/tutor-menu/rate-students.dart';
 import 'package:tutophia/TutorAccess/tutor-menu/upload-materials.dart';
-import 'package:tutophia/widgets/tutor-widgets/session-history-card.dart';
+import 'package:tutophia/models/tutor-model/feedback-tutor-data.dart';
+import 'package:tutophia/models/tutor-model/session-history-data.dart';
+import 'package:tutophia/data/tutor-data/session-history-repository.dart';
 
 // ── SessionHistoryScreen ──────────────────────────────────────────────────────
 
@@ -23,25 +25,13 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // ── Sample data — replace with real data source ────────────────────────────
+  late List<SessionStudentData> _students;
 
-  final List<SessionStudentData> _students = [
-    const SessionStudentData(
-      id: '1',
-      name: 'Isaac Rei Aniceta',
-      program: 'Computer Science',
-    ),
-    const SessionStudentData(
-      id: '2',
-      name: 'Lance Gerald Ferangco',
-      program: 'Computer Science',
-    ),
-    const SessionStudentData(
-      id: '3',
-      name: 'Ariah Mae Lindo',
-      program: 'Computer Science',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _students = List.from(sampleSessionStudents);
+  }
 
   @override
   void dispose() {
@@ -61,14 +51,11 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
         .toList();
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // ── AppBar ─────────────────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -83,7 +70,6 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ───────────────────────────────────────────────────────
             const HeaderTutorWdgt.sessionHistory(),
 
             const SizedBox(height: 20),
@@ -169,7 +155,6 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
         ),
       ),
 
-      // ── Bottom Nav ─────────────────────────────────────────────────────────
       bottomNavigationBar: BottomNavBar(
         currentIndex: _selectedNavIndex,
         onTap: (index) => setState(() => _selectedNavIndex = index),

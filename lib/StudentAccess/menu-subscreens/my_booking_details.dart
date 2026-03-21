@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:tutophia/model/student-model/booking_data.dart';
+import 'package:tutophia/models/student-model/booking_data.dart';
 import 'package:tutophia/widgets/student-widgets/tutor_summary_card.dart';
+import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
+import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
 
 class MyBookingDetailsScreen extends StatelessWidget {
   final BookingData booking;
@@ -28,43 +30,8 @@ class MyBookingDetailsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "BOOKINGS",
-                        style: TextStyle(
-                          fontFamily: 'Arimo',
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xff3d6fa5),
-                        ),
-                      ),
-                      Text(
-                        "Learn Smarter. Achieve Greater",
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                  Image.asset(
-                    "assets/images/tutophia-logo-white-outline.png",
-                    height: 60,
-                    width: 60,
-                    errorBuilder: (context, error, stackTrace) => CircleAvatar(
-                      backgroundColor: Colors.grey.shade200,
-                      radius: 25,
-                      child: const Icon(
-                        Icons.school,
-                        color: Color(0xfff4a24c),
-                        size: 30,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // ── Bookings Header ──
+              const HeaderStudentWdgt.bookings(),
 
               const SizedBox(height: 20),
 
@@ -140,19 +107,9 @@ class MyBookingDetailsScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: Colors.grey,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notification",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
-      ),
+
+      // ── Bottom Navigation ──
+      bottomNavigationBar: BottomNavStudent(currentIndex: 0, onTap: (_) {}),
     );
   }
 

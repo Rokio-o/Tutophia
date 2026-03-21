@@ -1,30 +1,6 @@
 import 'package:flutter/material.dart';
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const Color kFeedbackBlue = Color(0xFF3D6FA5);
-const Color kFeedbackBeige = Color(0xFFFEF7F0);
-const Color kFeedbackBorder = Color(0xFFE0E0E0);
-
-// ── StudentToRateData ─────────────────────────────────────────────────────────
-
-class StudentToRateData {
-  final String id;
-  final String name;
-  final String program;
-  final String imagePath;
-
-  const StudentToRateData({
-    required this.id,
-    required this.name,
-    required this.program,
-    this.imagePath = '',
-  });
-}
-
-// ── FeedbackToRateCard ────────────────────────────────────────────────────────
-// Reusable card showing a student with a "Rate" link.
-// Tapping "Rate" triggers [onRate] — parent decides what to show next.
+import 'package:tutophia/models/tutor-model/feedback-tutor-data.dart';
+import 'package:tutophia/widgets/tutor-widgets/feedback_constants.dart';
 
 class FeedbackToRateCard extends StatelessWidget {
   final StudentToRateData student;
@@ -55,12 +31,8 @@ class FeedbackToRateCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar
-          _StudentAvatar(imagePath: student.imagePath, size: 44),
-
+          StudentAvatar(imagePath: student.imagePath, size: 44),
           const SizedBox(width: 12),
-
-          // Name + Program
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,8 +53,6 @@ class FeedbackToRateCard extends StatelessWidget {
               ],
             ),
           ),
-
-          // Rate link
           GestureDetector(
             onTap: onRate,
             child: const Text(
@@ -101,8 +71,7 @@ class FeedbackToRateCard extends StatelessWidget {
   }
 }
 
-// ── _StudentAvatar ────────────────────────────────────────────────────────────
-// Shared avatar widget used in both card types.
+// ── StudentAvatar ─────────────────────────────────────────────────────────────
 
 class StudentAvatar extends StatelessWidget {
   final String imagePath;

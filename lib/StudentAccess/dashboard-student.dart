@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'menu-my_booking.dart';
 import 'menu-find_tutors_student.dart';
 import 'menu-feedback.dart';
+<<<<<<< HEAD
 import 'menu-session-history.dart';
 import 'menu-session-materials.dart';
 import 'menu-notifications.dart';
+=======
+import 'package:tutophia/widgets/student-widgets/student-dashboard-card.dart';
+import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
+import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
+>>>>>>> 44021367e3b4a8ecd52ba8b08169ec34fbc1ab04
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -32,6 +38,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             children: [
               const SizedBox(height: 20),
 
+<<<<<<< HEAD
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -60,10 +67,27 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         const Icon(Icons.school, size: 35),
                   ),
                 ],
+=======
+              // ── Dashboard Header ──
+              const HeaderStudentWdgt.dashboard(),
+
+              const SizedBox(height: 25),
+
+              // ── Profile Card with Stats ──
+              StudentDashboardCard(
+                name: "Student Name",
+                course: "Course",
+                upcomingSessions: upcomingSessions,
+                pendingBookings: pendingBookings,
+                newMaterials: newMaterials,
+                profileImagePath:
+                    "assets/icons/student_profile_placeholder.png",
+>>>>>>> 44021367e3b4a8ecd52ba8b08169ec34fbc1ab04
               ),
 
               const SizedBox(height: 25),
 
+<<<<<<< HEAD
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -137,6 +161,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
               const SizedBox(height: 25),
 
+=======
+              // ── Menu Option Grid ──
+>>>>>>> 44021367e3b4a8ecd52ba8b08169ec34fbc1ab04
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -161,6 +188,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     );
                   }),
 
+<<<<<<< HEAD
                   _menuButton("Session Materials", Icons.menu_book, () {
                     Navigator.push(
                       context,
@@ -169,6 +197,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       ),
                     );
                   }),
+=======
+                  _menuButton("Session Materials", Icons.menu_book, () {}),
+>>>>>>> 44021367e3b4a8ecd52ba8b08169ec34fbc1ab04
 
                   _menuButton("Feedback", Icons.feedback, () {
                     Navigator.push(
@@ -181,6 +212,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
               const SizedBox(height: 15),
 
+<<<<<<< HEAD
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -195,6 +227,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 70),
                   shape: RoundedRectangleBorder(
+=======
+              // ── Session History Button ──
+              GestureDetector(
+                onTap: () {},
+                child: Container(
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: const Color(0xff3d6fa5),
+>>>>>>> 44021367e3b4a8ecd52ba8b08169ec34fbc1ab04
                     borderRadius: BorderRadius.circular(18),
                   ),
                   elevation: 0,
@@ -222,7 +263,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
         ),
       ),
 
+<<<<<<< HEAD
       bottomNavigationBar: BottomNavigationBar(
+=======
+      // ── Bottom Navigation ──
+      bottomNavigationBar: BottomNavStudent(
+>>>>>>> 44021367e3b4a8ecd52ba8b08169ec34fbc1ab04
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() {
@@ -242,20 +288,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
             });
           }
         },
-        selectedItemColor: const Color(0xfff4a24c),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notification",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
       ),
     );
   }
 
+<<<<<<< HEAD
   Widget _statCard(String number, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -284,6 +321,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
+=======
+  // ── Menu Button Widget ──
+>>>>>>> 44021367e3b4a8ecd52ba8b08169ec34fbc1ab04
   Widget _menuButton(String title, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
