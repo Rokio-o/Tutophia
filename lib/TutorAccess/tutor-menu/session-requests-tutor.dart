@@ -7,6 +7,8 @@ import 'package:tutophia/widgets/tutor-widgets/session-card.dart';
 import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
 import 'package:tutophia/widgets/tutor-widgets/header-tutor-wdgt.dart';
 import 'package:tutophia/TutorAccess/tutor-menu/view-session-details.dart';
+import 'package:tutophia/models/tutor-model/session-requests-data.dart';
+import 'package:tutophia/data/tutor-data/session-requests-repository.dart';
 
 class SessionRequestsScreen extends StatefulWidget {
   const SessionRequestsScreen({super.key});
@@ -19,18 +21,18 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
   String _selectedTab = 'Requests';
   int _selectedIndex = 0;
 
-  final List<Map<String, String>> _requestStudents = [
-    {'name': 'Student Name', 'course': 'Program'},
-    {'name': 'Student Name', 'course': 'Program'},
-  ];
+  // ── State lists — mutable copies from data file ───────────────────────────
+  late List<SessionRequestStudentData> _requestStudents;
+  late List<SessionRequestStudentData> _approvedStudents;
+  late List<SessionRequestStudentData> _cancelledStudents;
 
-  final List<Map<String, String>> _approvedStudents = [
-    {'name': 'Student Name', 'course': 'Program'},
-  ];
-
-  final List<Map<String, String>> _cancelledStudents = [
-    {'name': 'Student Name', 'course': 'Program'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _requestStudents = List.from(sampleRequestStudents);
+    _approvedStudents = List.from(sampleApprovedStudents);
+    _cancelledStudents = List.from(sampleCancelledStudents);
+  }
 
   Widget _tabButton(String label) {
     final bool selected = _selectedTab == label;
@@ -97,8 +99,8 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
                   (s) => Padding(
                     padding: const EdgeInsets.only(bottom: 18),
                     child: RequestCard(
-                      name: s['name']!,
-                      course: s['course']!,
+                      name: s.name,
+                      course: s.course,
                       buttonText: 'View Request',
                       onButtonTap: () => Navigator.push(
                         context,
@@ -116,8 +118,8 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
                   (s) => Padding(
                     padding: const EdgeInsets.only(bottom: 18),
                     child: RequestCard(
-                      name: s['name']!,
-                      course: s['course']!,
+                      name: s.name,
+                      course: s.course,
                       buttonText: 'View Session Details',
                       onButtonTap: () => Navigator.push(
                         context,
@@ -131,10 +133,7 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
                 ..._cancelledStudents.map(
                   (s) => Padding(
                     padding: const EdgeInsets.only(bottom: 18),
-                    child: CancelledRequestCard(
-                      name: s['name']!,
-                      course: s['course']!,
-                    ),
+                    child: CancelledRequestCard(name: s.name, course: s.course),
                   ),
                 ),
               ],

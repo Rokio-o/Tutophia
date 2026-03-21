@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tutophia/model/student-model/tutor_data.dart';
+import 'package:tutophia/models/student-model/tutor_data.dart';
 import 'package:tutophia/StudentAccess/menu-subscreens/student-tutor_profile.dart';
 
 class TutorCardWidget extends StatelessWidget {

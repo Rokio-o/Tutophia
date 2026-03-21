@@ -1,4 +1,4 @@
-import 'package:tutophia/model/student-model/tutor_data.dart';
+import 'package:tutophia/models/student-model/tutor_data.dart';
 
 // Temporary tutor data.
 // Replace this later with database or backend data.

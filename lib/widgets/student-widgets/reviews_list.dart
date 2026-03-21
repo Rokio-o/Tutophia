@@ -61,6 +61,14 @@ class FeedbackReviewsList extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          if (review['course'] != null)
+                            Text(
+                              review['course'],
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black54,
+                              ),
+                            ),
                           Row(
                             children: [
                               const Text(

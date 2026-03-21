@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/StudentAccess/menu-subscreens/my_booking_details.dart';
-import 'package:tutophia/model/student-model/booking_data.dart';
+import 'package:tutophia/models/student-model/booking_data.dart';
 
 class BookingCardWidget extends StatelessWidget {
   final BookingData booking;

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/data/student-data/booking_repository.dart';
 import 'package:tutophia/widgets/student-widgets/booking_card_widget.dart';
+import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
+import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
 
 class StudentBookingsScreen extends StatefulWidget {
   const StudentBookingsScreen({super.key});
@@ -10,6 +12,8 @@ class StudentBookingsScreen extends StatefulWidget {
 }
 
 class _StudentBookingsScreenState extends State<StudentBookingsScreen> {
+  int _selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     // Screen that displays all student bookings.
@@ -28,44 +32,10 @@ class _StudentBookingsScreenState extends State<StudentBookingsScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "BOOKINGS",
-                        style: TextStyle(
-                          fontFamily: 'Arimo',
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xff3d6fa5),
-                        ),
-                      ),
-                      Text(
-                        "Learn Smarter. Achieve Greater",
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                  Image.asset(
-                    "assets/images/tutophia-logo-white-outline.png",
-                    height: 60,
-                    width: 60,
-                    errorBuilder: (context, error, stackTrace) => CircleAvatar(
-                      backgroundColor: Colors.grey.shade200,
-                      radius: 25,
-                      child: const Icon(
-                        Icons.school,
-                        color: Color(0xfff4a24c),
-                        size: 30,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // ── Bookings Header ──
+              child: const HeaderStudentWdgt.bookings(),
             ),
+
             const SizedBox(height: 20),
 
             Expanded(
@@ -89,18 +59,15 @@ class _StudentBookingsScreenState extends State<StudentBookingsScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: Colors.grey,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notification",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
+
+      // ── Bottom Navigation ──
+      bottomNavigationBar: BottomNavStudent(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
       ),
     );
   }

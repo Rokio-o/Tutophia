@@ -3,6 +3,8 @@ import 'package:tutophia/TutorAccess/dashboard-tutor.dart';
 import 'package:tutophia/TutorAccess/profile-tutor.dart';
 import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
 import 'package:tutophia/widgets/tutor-widgets/notification-tutor-cards.dart';
+import 'package:tutophia/models/tutor-model/notification-tutor-data.dart';
+import 'package:tutophia/data/tutor-data/notification-tutor-repository.dart';
 
 class TutorNotificationScreen extends StatefulWidget {
   const TutorNotificationScreen({super.key});
@@ -13,32 +15,16 @@ class TutorNotificationScreen extends StatefulWidget {
 }
 
 class _TutorNotificationScreenState extends State<TutorNotificationScreen> {
-  int _selectedIndex = 1; // Notifications tab index
+  int _selectedIndex = 1;
 
-  final List<NotificationCardData> _notifications = [
-    const NotificationCardData(
-      type: NotificationType.bookingRequest,
-      title: 'Booking Request',
-      message: 'Student Wenifredo request to have a tutoring session with you',
-    ),
-    const NotificationCardData(
-      type: NotificationType.bookingCancellation,
-      title: 'Booking Cancellation',
-      message:
-          'Student Wenifredo cancelled the tutoring session; Reason: Schedule Conflict',
-    ),
-    const NotificationCardData(
-      type: NotificationType.sessionReminder,
-      title: 'Session Reminder',
-      message: 'You have tutoring session with student Wenifredo today at 10am',
-    ),
-    const NotificationCardData(
-      type: NotificationType.feedbackReceived,
-      title: 'Feedback Received',
-      message:
-          'Student named Wenifredo gave you a rate and descriptive feedback',
-    ),
-  ];
+  // ── State list — mutable copy from data file ──────────────────────────────
+  late List<NotificationCardData> _notifications;
+
+  @override
+  void initState() {
+    super.initState();
+    _notifications = List.from(sampleTutorNotifications);
+  }
 
   void _clearAll() {
     showDialog(
@@ -108,7 +94,7 @@ class _TutorNotificationScreenState extends State<TutorNotificationScreen> {
                 fontFamily: 'Arimo',
                 fontSize: 26,
                 fontWeight: FontWeight.w900,
-                color: const Color(0xff3d6fa5),
+                color: Color(0xff3d6fa5),
                 letterSpacing: 1.2,
               ),
             ),
@@ -168,34 +154,23 @@ class _TutorNotificationScreenState extends State<TutorNotificationScreen> {
         ],
       ),
 
-      // ── Bottom Nav Bar (your existing BottomNavBar widget) ─────────────────
+      // ── Bottom Nav ─────────────────────────────────────────────────────────
       bottomNavigationBar: BottomNavBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
         tabActions: [
-          () {
-            // Home
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const TutorDashboard()),
-            );
-          },
-          () {
-            // Notifications — already here, no-op
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const TutorNotificationScreen(),
-              ),
-            );
-          },
-          () {
-            // Profile
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const TutorProfileScreen()),
-            );
-          },
+          () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const TutorDashboard()),
+          ),
+          () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const TutorNotificationScreen()),
+          ),
+          () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const TutorProfileScreen()),
+          ),
         ],
       ),
     );

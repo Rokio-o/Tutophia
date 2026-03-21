@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/widgets/student-widgets/reviews_list.dart';
 import 'package:tutophia/widgets/student-widgets/to_rate_list.dart';
+import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
+import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
+
+// ── Tab Enum ──────────────────────────────────────────────────────────────────
+
+enum _FeedbackTab { toRate, myReviews }
+
+// ── FeedbackScreen ────────────────────────────────────────────────────────────
 
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
@@ -10,16 +18,13 @@ class FeedbackScreen extends StatefulWidget {
 }
 
 class _FeedbackScreenState extends State<FeedbackScreen> {
-  int _selectedTab = 0; // 0 = To Rate, 1 = My Reviews
   int _selectedBottomNavIndex = 0;
+  _FeedbackTab _activeTab = _FeedbackTab.toRate;
 
   final TextEditingController _commentController = TextEditingController();
   int _selectedRating = 0;
 
-  // Controls if user is currently rating someone
   bool _isRatingMode = false;
-
-  // Selected tutor for rating
   Map<String, String>? _selectedTutor;
 
   // Sample tutors to rate
@@ -32,11 +37,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   final List<Map<String, dynamic>> _reviews = [
     {
       'name': 'Juliana Aura Fortu',
+      'course': 'BS Computer Science',
       'rating': 5,
       'comment': 'Attentive and interested to the session',
     },
     {
       'name': 'Chilldon Paul Carreon',
+      'course': 'BS Information Technology',
       'rating': 4,
       'comment': 'A little bit late to the session but it ends very well',
     },
@@ -106,16 +113,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       'rating': _selectedRating,
                       'comment': _commentController.text.trim(),
                     });
-
                     _toRateList.removeWhere(
                       (item) => item['name'] == _selectedTutor!['name'],
                     );
-
                     _isRatingMode = false;
                     _selectedTutor = null;
                     _selectedRating = 0;
                     _commentController.clear();
-                    _selectedTab = 1;
+                    _activeTab = _FeedbackTab.myReviews;
                   });
                 },
                 style: ElevatedButton.styleFrom(
@@ -160,97 +165,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           ),
         );
       }),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'FEEDBACK',
-                style: TextStyle(
-                  color: Color(0xff3d6fa5),
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Review tutor advice and put your rating',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-        Image.asset(
-          'assets/images/tutophia-logo-white-outline.png',
-          height: 55,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.school, size: 48, color: Color(0xfff4a24c));
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTabButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildTabButton(
-            label: 'To Rate',
-            isActive: _selectedTab == 0,
-            onTap: () {
-              setState(() {
-                _selectedTab = 0;
-                _isRatingMode = false;
-              });
-            },
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _buildTabButton(
-            label: 'My Reviews',
-            isActive: _selectedTab == 1,
-            onTap: () {
-              setState(() {
-                _selectedTab = 1;
-                _isRatingMode = false;
-              });
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTabButton({
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return SizedBox(
-      height: 42,
-      child: OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: isActive ? const Color(0xffdbe5f1) : Colors.white,
-          side: const BorderSide(color: Color(0xff8a5a5a)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(color: Colors.black87, fontSize: 16),
-        ),
-      ),
     );
   }
 
@@ -369,14 +283,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   Widget _buildBodyContent() {
-    if (_selectedTab == 0 && _isRatingMode) {
+    if (_activeTab == _FeedbackTab.toRate && _isRatingMode) {
       return _buildRatingForm();
     }
-
-    if (_selectedTab == 0) {
+    if (_activeTab == _FeedbackTab.toRate) {
       return FeedbackToRateList(items: _toRateList, onRateTap: _startRating);
     }
-
     return FeedbackReviewsList(reviews: _reviews);
   }
 
@@ -401,13 +313,26 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
-              const SizedBox(height: 24),
-              _buildTabButtons(),
+              // ── Feedback Header ──
+              const HeaderStudentWdgt.feedback(),
+
               const SizedBox(height: 20),
+
+              // ── Tab Bar ──
+              _FeedbackTabBar(
+                active: _activeTab,
+                onTabChanged: (tab) => setState(() {
+                  _activeTab = tab;
+                  _isRatingMode = false;
+                }),
+              ),
+
+              const SizedBox(height: 16),
+
               Expanded(
                 child: SingleChildScrollView(child: _buildBodyContent()),
               ),
@@ -415,29 +340,92 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+
+      // ── Bottom Navigation ──
+      bottomNavigationBar: BottomNavStudent(
         currentIndex: _selectedBottomNavIndex,
         onTap: (index) {
           setState(() {
             _selectedBottomNavIndex = index;
           });
         },
-        selectedItemColor: Colors.grey,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
+      ),
+    );
+  }
+}
+
+// ── _FeedbackTabBar ───────────────────────────────────────────────────────────
+
+class _FeedbackTabBar extends StatelessWidget {
+  final _FeedbackTab active;
+  final ValueChanged<_FeedbackTab> onTabChanged;
+
+  const _FeedbackTabBar({required this.active, required this.onTabChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _TabButton(
+            label: 'To Rate',
+            isActive: active == _FeedbackTab.toRate,
+            isLeft: true,
+            onTap: () => onTabChanged(_FeedbackTab.toRate),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none),
-            label: 'Notification',
+        ),
+        Expanded(
+          child: _TabButton(
+            label: 'My Reviews',
+            isActive: active == _FeedbackTab.myReviews,
+            isLeft: false,
+            onTap: () => onTabChanged(_FeedbackTab.myReviews),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
+        ),
+      ],
+    );
+  }
+}
+
+class _TabButton extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final bool isLeft;
+  final VoidCallback onTap;
+
+  const _TabButton({
+    required this.label,
+    required this.isActive,
+    required this.isLeft,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(
+            color: isActive ? const Color(0xff3d6fa5) : const Color(0xFFE0E0E0),
+            width: isActive ? 1.5 : 1.0,
           ),
-        ],
+          borderRadius: BorderRadius.horizontal(
+            left: isLeft ? const Radius.circular(8) : Radius.zero,
+            right: !isLeft ? const Radius.circular(8) : Radius.zero,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+            color: isActive ? const Color(0xff3d6fa5) : Colors.black87,
+          ),
+        ),
       ),
     );
   }

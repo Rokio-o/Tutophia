@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/data/student-data/tutor_repository.dart';
-import 'package:tutophia/model/student-model/tutor_data.dart';
+import 'package:tutophia/models/student-model/tutor_data.dart';
 import 'package:tutophia/widgets/student-widgets/tutor_card_widget.dart';
 import 'package:tutophia/widgets/student-widgets/filter_button.dart';
+import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
+import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
 
 class FindTutors extends StatefulWidget {
   const FindTutors({super.key});
@@ -92,17 +94,12 @@ class _FindTutorsState extends State<FindTutors> {
 
   void _clearFilters() {
     setState(() {
-      // Reset all filter values
       _filterRating = 5;
       _minRateCtrl.clear();
       _maxRateCtrl.clear();
       _subjectCtrl.clear();
       _locationCtrl.clear();
-
-      // Reset tutor list
       _filteredTutors = availableTutors;
-
-      // Hide the clear filter button
       _hasActiveFilter = false;
     });
   }
@@ -160,42 +157,11 @@ class _FindTutorsState extends State<FindTutors> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "FIND TUTORS",
-                          style: TextStyle(
-                            fontFamily: 'Arimo',
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xff3d6fa5),
-                          ),
-                        ),
-                        Text(
-                          "Find the right tutor for your learning goals",
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Image.asset(
-                    "assets/images/tutophia-logo-white-outline.png",
-                    height: 50,
-                    errorBuilder: (c, e, s) => const Icon(
-                      Icons.school,
-                      size: 50,
-                      color: Color(0xfff4a24c),
-                    ),
-                  ),
-                ],
-              ),
+              // ── Find Tutors Header ──
+              const HeaderStudentWdgt.findTutors(),
+
               const SizedBox(height: 20),
+
               Row(
                 children: [
                   GestureDetector(
@@ -206,8 +172,8 @@ class _FindTutorsState extends State<FindTutors> {
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
                         color: _hasActiveFilter
-                            ? const Color(0xfff4a24c) // Color of Clear button
-                            : const Color(0xff3d6fa5), // Color of Filter Button
+                            ? const Color(0xfff4a24c)
+                            : const Color(0xff3d6fa5),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
@@ -259,12 +225,15 @@ class _FindTutorsState extends State<FindTutors> {
                   ),
                 ],
               ),
+
               const SizedBox(height: 15),
+
               const Text(
                 "Tutors",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               const Divider(color: Colors.black87, thickness: 1),
+
               Expanded(
                 child: _filteredTutors.isEmpty
                     ? const Center(child: Text("No match."))
@@ -285,23 +254,14 @@ class _FindTutorsState extends State<FindTutors> {
         ),
       ),
 
-      bottomNavigationBar: BottomNavigationBar(
+      // ── Bottom Navigation ──
+      bottomNavigationBar: BottomNavStudent(
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
           });
         },
-        selectedItemColor: const Color(0xfff4a24c),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: "Notification",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
       ),
     );
   }

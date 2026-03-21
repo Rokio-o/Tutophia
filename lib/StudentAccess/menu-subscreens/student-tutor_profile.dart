@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tutophia/model/student-model/tutor_data.dart';
+import 'package:tutophia/models/student-model/tutor_data.dart';
 import 'package:tutophia/StudentAccess/menu-subscreens/tutor_booking.dart';
 
 class StudentTutorProfileScreen extends StatelessWidget {
@@ -185,6 +185,8 @@ class StudentTutorProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+
+      // ── Book a Session Button ──
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),

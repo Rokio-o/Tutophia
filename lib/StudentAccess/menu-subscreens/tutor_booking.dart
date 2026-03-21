@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:tutophia/data/student-data/booking_repository.dart';
-import 'package:tutophia/model/student-model/booking_data.dart';
-import 'package:tutophia/model/student-model/tutor_data.dart';
+import 'package:tutophia/models/student-model/booking_data.dart';
+import 'package:tutophia/models/student-model/tutor_data.dart';
+import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
 import 'booking_confirmation.dart';
 
 class StudentTutorBookingScreen extends StatefulWidget {
@@ -44,14 +45,12 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
 
   @override
   void dispose() {
-    // Dispose controllers when screen is destroyed.
     _locationController.dispose();
     _reasonController.dispose();
     super.dispose();
   }
 
   void _submitBooking() {
-    // Basic form validation.
     if (_selectedDate == null ||
         _subject == null ||
         _locationController.text.trim().isEmpty ||
@@ -100,32 +99,26 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
   Widget build(BuildContext context) {
     final List<String> subjects = widget.tutor.subjects;
 
-    // Booking form screen.
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
-        title: Text(
-          "BOOKING",
-          style: TextStyle(
-            fontFamily: 'Arimo',
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: primaryBlue,
-          ),
-        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Booking Header ──
+            const HeaderStudentWdgt.booking(),
+
+            const SizedBox(height: 20),
+
             _buildLabel("Select a Date"),
             const SizedBox(height: 5),
 

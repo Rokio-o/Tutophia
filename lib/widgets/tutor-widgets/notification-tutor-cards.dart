@@ -1,23 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/models/tutor-model/notification-tutor-data.dart';
 
-enum NotificationType {
-  bookingRequest,
-  bookingCancellation,
-  sessionReminder,
-  feedbackReceived,
-}
-
-class NotificationCardData {
-  final NotificationType type;
-  final String title;
-  final String message;
-
-  const NotificationCardData({
-    required this.type,
-    required this.title,
-    required this.message,
-  });
-}
+// ── NotificationTutorCard ─────────────────────────────────────────────────────
 
 class NotificationTutorCard extends StatelessWidget {
   final NotificationCardData data;
@@ -118,6 +102,8 @@ class NotificationTutorCard extends StatelessWidget {
   }
 }
 
+// ── _NotificationStyle ────────────────────────────────────────────────────────
+
 class _NotificationStyle {
   final IconData icon;
   final Color backgroundColor;
@@ -125,7 +111,7 @@ class _NotificationStyle {
   const _NotificationStyle({required this.icon, required this.backgroundColor});
 }
 
-// ── Notification List Widget ─────────────────────────────────────────────────
+// ── NotificationTutorList ─────────────────────────────────────────────────────
 
 class NotificationTutorList extends StatelessWidget {
   final List<NotificationCardData> notifications;
@@ -152,74 +138,4 @@ class NotificationTutorList extends StatelessWidget {
       },
     );
   }
-}
-
-// ── Sample Usage / Demo Screen ────────────────────────────────────────────────
-
-class NotificationTutorScreen extends StatelessWidget {
-  const NotificationTutorScreen({super.key});
-
-  static final List<NotificationCardData> _sampleNotifications = [
-    NotificationCardData(
-      type: NotificationType.bookingRequest,
-      title: 'Booking Request',
-      message: 'Student Wenifredo request to have a tutoring session with you',
-    ),
-    NotificationCardData(
-      type: NotificationType.bookingCancellation,
-      title: 'Booking Cancellation',
-      message:
-          'Student Wenifredo cancelled the tutoring session; Reason: Schedule Conflict',
-    ),
-    NotificationCardData(
-      type: NotificationType.sessionReminder,
-      title: 'Session Reminder',
-      message: 'You have tutoring session with student Wenifredo today at 10am',
-    ),
-    NotificationCardData(
-      type: NotificationType.feedbackReceived,
-      title: 'Feedback Received',
-      message:
-          'Student named Wenifredo gave you a rate and descriptive feedback',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0EBE0),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF0EBE0),
-        elevation: 0,
-        title: const Text(
-          'Notifications',
-          style: TextStyle(
-            color: Color(0xFF1A1A2E),
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: NotificationTutorList(
-          notifications: _sampleNotifications,
-          onCardTap: (item) {
-            debugPrint('Tapped: ${item.title}');
-          },
-        ),
-      ),
-    );
-  }
-}
-
-// ── Entry Point ───────────────────────────────────────────────────────────────
-
-void main() {
-  runApp(
-    const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: NotificationTutorScreen(),
-    ),
-  );
 }
