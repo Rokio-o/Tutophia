@@ -12,8 +12,11 @@ import 'StudentAccess/registration1-student.dart';
 import 'StudentAccess/registration2-student.dart';
 import 'TutorAccess/registration1-tutor.dart';
 import 'StudentAccess/dashboard-student.dart';
+import 'StudentAccess/menu-session-history.dart';
+import 'StudentAccess/menu-session-materials.dart';
 import 'TutorAccess/tutor-menu/view-session-details.dart';
 import 'package:tutophia/TutorAccess/registration1-tutor.dart';
+
 
 void main() {
   runApp(TutophiaApp());

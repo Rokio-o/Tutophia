@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'menu-my_booking.dart';
 import 'menu-find_tutors_student.dart';
 import 'menu-feedback.dart';
+import 'menu-session-history.dart';
+import 'menu-session-materials.dart';
+import 'menu-notifications.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -13,7 +16,6 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   int _selectedIndex = 0;
 
-  // placeholder stats - in real app, these would be dynamic based on user data
   int upcomingSessions = 0;
   int pendingBookings = 0;
   int newMaterials = 0;
@@ -22,7 +24,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff3f3f3),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -31,7 +32,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
             children: [
               const SizedBox(height: 20),
 
-              // dashboard header with logo
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -64,7 +64,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
               const SizedBox(height: 25),
 
-              // profile card with statistics
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -73,7 +72,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 ),
                 child: Column(
                   children: [
-                    // profile card
                     Row(
                       children: [
                         Container(
@@ -92,9 +90,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             ),
                           ),
                         ),
-
                         const SizedBox(width: 15),
-
                         const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -106,14 +102,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                 color: Colors.white,
                               ),
                             ),
-                            Text(
-                              "Student",
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            Text(
-                              "Course",
-                              style: TextStyle(color: Colors.white70),
-                            ),
+                            Text("Student",
+                                style: TextStyle(color: Colors.white70)),
+                            Text("Course",
+                                style: TextStyle(color: Colors.white70)),
                           ],
                         ),
                       ],
@@ -121,32 +113,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
                     const SizedBox(height: 20),
 
-                    // stats - to be change to dynamic values in app
                     Row(
                       children: [
                         Expanded(
                           child: _statCard(
-                            upcomingSessions.toString(),
-                            "Upcoming\nSessions",
-                          ),
+                              upcomingSessions.toString(), "Upcoming\nSessions"),
                         ),
-
                         const SizedBox(width: 10),
-
                         Expanded(
                           child: _statCard(
-                            pendingBookings.toString(),
-                            "Pending\nBookings",
-                          ),
+                              pendingBookings.toString(), "Pending\nBookings"),
                         ),
-
                         const SizedBox(width: 10),
-
                         Expanded(
                           child: _statCard(
-                            newMaterials.toString(),
-                            "New\nMaterials",
-                          ),
+                              newMaterials.toString(), "New\nMaterials"),
                         ),
                       ],
                     ),
@@ -156,7 +137,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
               const SizedBox(height: 25),
 
-              // menu option gridi
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -166,7 +146,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 childAspectRatio: 1.2,
                 children: [
                   _menuButton("Find Tutors", Icons.search, () {
-                    //Navogate to Find Tutors Screen
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => FindTutors()),
@@ -174,7 +153,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   }),
 
                   _menuButton("My Bookings", Icons.calendar_today, () {
-                    //Navigate to My Bookings Screen
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -184,11 +162,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   }),
 
                   _menuButton("Session Materials", Icons.menu_book, () {
-                    // Will add function later
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SessionMaterialsScreen(),
+                      ),
+                    );
                   }),
 
                   _menuButton("Feedback", Icons.feedback, () {
-                    //Navigate to Feedback Screen
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => FeedbackScreen()),
@@ -199,30 +181,38 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
               const SizedBox(height: 15),
 
-              // session history button
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: const Color(0xff3d6fa5),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SessionHistoryScreen(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff3d6fa5),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 70),
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.history, color: Colors.white),
-                      SizedBox(width: 10),
-                      Text(
-                        "Session History",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                  elevation: 0,
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.history, color: Colors.white),
+                    SizedBox(width: 10),
+                    Text(
+                      "Session History",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -232,13 +222,25 @@ class _StudentDashboardState extends State<StudentDashboard> {
         ),
       ),
 
-      // bottom navigation
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
           });
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const StudentNotificationsScreen(),
+              ),
+            ).then((_) {
+              // reset tab back to Home when returning
+              setState(() {
+                _selectedIndex = 0;
+              });
+            });
+          }
         },
         selectedItemColor: const Color(0xfff4a24c),
         unselectedItemColor: Colors.grey,
@@ -254,7 +256,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  // stat card widget
   Widget _statCard(String number, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -283,7 +284,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  // menu button widget
   Widget _menuButton(String title, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
