@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/models/tutor-model/feedback-tutor-data.dart';
 import 'package:tutophia/widgets/tutor-widgets/feedback-to-rate-card.dart';
+import 'package:tutophia/widgets/tutor-widgets/feedback_constants.dart';
 
-class MyReviewsCard extends StatelessWidget {
-  final ReviewData review;
+class MyFeedbackCard extends StatelessWidget {
+  final TutorFeedbackGivenData feedback;
 
-  const MyReviewsCard({super.key, required this.review});
+  const MyFeedbackCard({super.key, required this.feedback});
 
   @override
   Widget build(BuildContext context) {
@@ -31,39 +32,26 @@ class MyReviewsCard extends StatelessWidget {
             // ── Student info row ──
             Row(
               children: [
-                StudentAvatar(imagePath: review.imagePath ?? '', size: 48),
+                StudentAvatar(imagePath: feedback.imagePath, size: 48),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        review.studentName,
+                        feedback.studentName,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
                       ),
                       Text(
-                        review.program,
+                        feedback.program,
                         style: const TextStyle(
                           fontSize: 13,
                           color: Colors.black54,
                         ),
-                      ),
-                      Row(
-                        children: [
-                          const Text('Rate: ', style: TextStyle(fontSize: 14)),
-                          ...List.generate(5, (index) {
-                            return Icon(
-                              index < review.rating
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              color: Colors.amber,
-                              size: 24,
-                            );
-                          }),
-                        ],
                       ),
                     ],
                   ),
@@ -73,12 +61,19 @@ class MyReviewsCard extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // ── Comment ──
+            // ── Feedback label ──
             const Text(
-              'Comment',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              'Feedback Given',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: kFeedbackBlue,
+              ),
             ),
+
             const SizedBox(height: 10),
+
+            // ── Feedback content box ──
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
@@ -86,9 +81,12 @@ class MyReviewsCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xff8a5a5a)),
+                border: Border.all(color: kFeedbackBlue),
               ),
-              child: Text(review.comment, style: const TextStyle(fontSize: 15)),
+              child: Text(
+                feedback.feedback,
+                style: const TextStyle(fontSize: 15, color: Colors.black87),
+              ),
             ),
           ],
         ),

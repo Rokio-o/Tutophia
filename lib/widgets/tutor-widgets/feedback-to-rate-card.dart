@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:tutophia/models/tutor-model/feedback-tutor-data.dart';
 import 'package:tutophia/widgets/tutor-widgets/feedback_constants.dart';
 
+// ── FeedbackToRateCard ────────────────────────────────────────────────────────
+
 class FeedbackToRateCard extends StatelessWidget {
   final StudentToRateData student;
-  final VoidCallback onRate;
+  final VoidCallback onGiveFeedback;
 
   const FeedbackToRateCard({
     super.key,
     required this.student,
-    required this.onRate,
+    required this.onGiveFeedback,
   });
 
   @override
@@ -53,15 +55,19 @@ class FeedbackToRateCard extends StatelessWidget {
               ],
             ),
           ),
+
+          // Give Feedback button
           GestureDetector(
-            onTap: onRate,
+            onTap: onGiveFeedback,
             child: const Text(
-              'Rate',
+              'Give Feedback',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: kFeedbackBlue,
                 decoration: TextDecoration.underline,
+                decorationColor: kFeedbackBlue,
+                decorationThickness: 2,
               ),
             ),
           ),
@@ -78,18 +84,6 @@ class StudentAvatar extends StatelessWidget {
   final double size;
 
   const StudentAvatar({super.key, required this.imagePath, this.size = 44});
-
-  @override
-  Widget build(BuildContext context) {
-    return _StudentAvatar(imagePath: imagePath, size: size);
-  }
-}
-
-class _StudentAvatar extends StatelessWidget {
-  final String imagePath;
-  final double size;
-
-  const _StudentAvatar({required this.imagePath, required this.size});
 
   @override
   Widget build(BuildContext context) {

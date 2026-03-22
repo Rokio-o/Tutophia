@@ -1,5 +1,3 @@
-import 'package:tutophia/models/tutor-model/upload-materials-data.dart';
-
 // ── Sample Student List ───────────────────────────────────────────────────────
 
 final List<String> sampleStudentNames = [

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/models/student-model/feedback_data.dart';
 
 class FeedbackToRateList extends StatelessWidget {
-  // List of items to display
-  final List<Map<String, String>> items;
-
-  // Callback when "Rate" is tapped
-  final Function(Map<String, String>) onRateTap;
+  final List<ToRateData> items;
+  final Function(ToRateData) onRateTap;
 
   const FeedbackToRateList({
     super.key,
@@ -15,7 +13,6 @@ class FeedbackToRateList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Show message if no data
     if (items.isEmpty) {
       return const Center(
         child: Padding(
@@ -28,15 +25,12 @@ class FeedbackToRateList extends StatelessWidget {
       );
     }
 
-    // Display list of items
     return Column(
       children: items.map((item) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 18),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-
-            // Card styling
             decoration: BoxDecoration(
               color: const Color(0xfff7f1eb),
               borderRadius: BorderRadius.circular(14),
@@ -48,29 +42,49 @@ class FeedbackToRateList extends StatelessWidget {
                 ),
               ],
             ),
-
-            // Layout: Icon | Info | Rate button
             child: Row(
               children: [
                 const Icon(Icons.account_circle, size: 48),
 
                 const SizedBox(width: 14),
 
-                // Takes remaining space
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(item['name'] ?? ''),
-                      Text(item['role'] ?? ''),
+                      Text(
+                        item.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        item.role,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black54,
+                        ),
+                      ),
                     ],
                   ),
                 ),
 
-                // Trigger rating action
+                // Rate button
                 GestureDetector(
                   onTap: () => onRateTap(item),
-                  child: const Text('Rate'),
+                  child: const Text(
+                    'Rate',
+                    style: TextStyle(
+                      color: Color(0xff3d6fa5),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(0xff3d6fa5),
+                      decorationThickness: 2,
+                    ),
+                  ),
                 ),
               ],
             ),

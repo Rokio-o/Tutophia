@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/models/student-model/feedback_data.dart';
 
-class FeedbackReviewsList extends StatelessWidget {
-  final List<ReviewData> reviews;
+class TutorAdviceList extends StatelessWidget {
+  final List<TutorAdviceData> adviceList;
 
-  const FeedbackReviewsList({super.key, required this.reviews});
+  const TutorAdviceList({super.key, required this.adviceList});
 
   @override
   Widget build(BuildContext context) {
-    if (reviews.isEmpty) {
+    if (adviceList.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.only(top: 40),
           child: Text(
-            'No reviews yet.',
+            'No advice from tutors yet.',
             style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ),
@@ -21,7 +21,7 @@ class FeedbackReviewsList extends StatelessWidget {
     }
 
     return Column(
-      children: reviews.map((review) {
+      children: adviceList.map((item) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 22),
           child: Container(
@@ -41,6 +41,7 @@ class FeedbackReviewsList extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Tutor info row ──
                 Row(
                   children: [
                     const Icon(
@@ -54,37 +55,21 @@ class FeedbackReviewsList extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            review.name,
+                            item.tutorName,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: Colors.black87,
                             ),
                           ),
-                          if (review.course != null)
+                          if (item.tutorRole != null)
                             Text(
-                              review.course!,
+                              item.tutorRole!,
                               style: const TextStyle(
                                 fontSize: 13,
                                 color: Colors.black54,
                               ),
                             ),
-                          Row(
-                            children: [
-                              const Text(
-                                'Rate: ',
-                                style: TextStyle(fontSize: 14),
-                              ),
-                              ...List.generate(5, (index) {
-                                return Icon(
-                                  index < review.rating
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 24,
-                                );
-                              }),
-                            ],
-                          ),
                         ],
                       ),
                     ),
@@ -93,11 +78,19 @@ class FeedbackReviewsList extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
+                // ── Advice label ──
                 const Text(
-                  'Comment',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  'Tutor\'s Advice',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xff3d6fa5),
+                  ),
                 ),
+
                 const SizedBox(height: 10),
+
+                // ── Advice content box ──
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -105,11 +98,11 @@ class FeedbackReviewsList extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xff8a5a5a)),
+                    border: Border.all(color: const Color(0xff3d6fa5)),
                   ),
                   child: Text(
-                    review.comment,
-                    style: const TextStyle(fontSize: 15),
+                    item.advice,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
                   ),
                 ),
               ],

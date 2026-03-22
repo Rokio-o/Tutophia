@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/models/student-model/feedback_data.dart';
+import 'package:tutophia/data/student-data/feedback_repository.dart';
 import 'package:tutophia/widgets/student-widgets/reviews_list.dart';
 import 'package:tutophia/widgets/student-widgets/to_rate_list.dart';
+import 'package:tutophia/widgets/student-widgets/tutor-advice_list.dart';
 import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
 import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
+import 'package:tutophia/StudentAccess/notifications-student.dart';
+import 'package:tutophia/StudentAccess/profile-student.dart';
+import 'package:tutophia/StudentAccess/dashboard-student.dart';
 
 // ── Tab Enum ──────────────────────────────────────────────────────────────────
 
-enum _FeedbackTab { toRate, myReviews }
+enum _FeedbackTab { toRate, myReviews, tutorAdvice }
 
 // ── FeedbackScreen ────────────────────────────────────────────────────────────
 
@@ -18,36 +24,26 @@ class FeedbackScreen extends StatefulWidget {
 }
 
 class _FeedbackScreenState extends State<FeedbackScreen> {
-  int _selectedBottomNavIndex = 0;
   _FeedbackTab _activeTab = _FeedbackTab.toRate;
 
   final TextEditingController _commentController = TextEditingController();
   int _selectedRating = 0;
 
   bool _isRatingMode = false;
-  Map<String, String>? _selectedTutor;
+  ToRateData? _selectedTutor;
 
-  // Sample tutors to rate
-  final List<Map<String, String>> _toRateList = [
-    {'name': 'Jeancess Gallo', 'role': 'Student Tutor'},
-    {'name': 'Lawrence Malaga', 'role': 'Student Tutor'},
-  ];
+  // Mutable local copies from repository
+  late List<ToRateData> _toRateList;
+  late List<ReviewData> _reviews;
+  late List<TutorAdviceData> _tutorAdvice;
 
-  // Sample reviews
-  final List<Map<String, dynamic>> _reviews = [
-    {
-      'name': 'Juliana Aura Fortu',
-      'course': 'BS Computer Science',
-      'rating': 5,
-      'comment': 'Attentive and interested to the session',
-    },
-    {
-      'name': 'Chilldon Paul Carreon',
-      'course': 'BS Information Technology',
-      'rating': 4,
-      'comment': 'A little bit late to the session but it ends very well',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _toRateList = List.from(toRateList);
+    _reviews = List.from(reviewsList);
+    _tutorAdvice = List.from(tutorAdviceList);
+  }
 
   @override
   void dispose() {
@@ -55,7 +51,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     super.dispose();
   }
 
-  void _startRating(Map<String, String> tutor) {
+  // ---------- RATING FLOW ----------
+
+  void _startRating(ToRateData tutor) {
     setState(() {
       _isRatingMode = true;
       _selectedTutor = tutor;
@@ -108,13 +106,16 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 onPressed: () {
                   Navigator.pop(context);
                   setState(() {
-                    _reviews.insert(0, {
-                      'name': _selectedTutor!['name']!,
-                      'rating': _selectedRating,
-                      'comment': _commentController.text.trim(),
-                    });
+                    _reviews.insert(
+                      0,
+                      ReviewData(
+                        name: _selectedTutor!.name,
+                        rating: _selectedRating,
+                        comment: _commentController.text.trim(),
+                      ),
+                    );
                     _toRateList.removeWhere(
-                      (item) => item['name'] == _selectedTutor!['name'],
+                      (item) => item.name == _selectedTutor!.name,
                     );
                     _isRatingMode = false;
                     _selectedTutor = null;
@@ -144,6 +145,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     );
   }
 
+  // ---------- STAR ROW ----------
+
   Widget _buildStarRow() {
     return Row(
       children: List.generate(5, (index) {
@@ -168,6 +171,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     );
   }
 
+  // ---------- RATING FORM ----------
+
   Widget _buildRatingForm() {
     final tutor = _selectedTutor;
     if (tutor == null) return const SizedBox.shrink();
@@ -182,11 +187,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          tutor['name'] ?? '',
+          tutor.name,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         Text(
-          tutor['role'] ?? '',
+          tutor.role,
           style: const TextStyle(fontSize: 14, color: Colors.black87),
         ),
         const SizedBox(height: 42),
@@ -282,6 +287,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     );
   }
 
+  // ---------- BODY CONTENT ----------
+
   Widget _buildBodyContent() {
     if (_activeTab == _FeedbackTab.toRate && _isRatingMode) {
       return _buildRatingForm();
@@ -289,8 +296,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     if (_activeTab == _FeedbackTab.toRate) {
       return FeedbackToRateList(items: _toRateList, onRateTap: _startRating);
     }
-    return FeedbackReviewsList(reviews: _reviews);
+    if (_activeTab == _FeedbackTab.myReviews) {
+      return FeedbackReviewsList(reviews: _reviews);
+    }
+    return TutorAdviceList(adviceList: _tutorAdvice);
   }
+
+  // ---------- BUILD ----------
 
   @override
   Widget build(BuildContext context) {
@@ -311,6 +323,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           },
         ),
       ),
+
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -322,7 +335,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
               const SizedBox(height: 20),
 
-              // ── Tab Bar ──
+              // ── 3-Tab Bar ──
               _FeedbackTabBar(
                 active: _activeTab,
                 onTabChanged: (tab) => setState(() {
@@ -343,11 +356,26 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
       // ── Bottom Navigation ──
       bottomNavigationBar: BottomNavStudent(
-        currentIndex: _selectedBottomNavIndex,
+        currentIndex: 0,
         onTap: (index) {
-          setState(() {
-            _selectedBottomNavIndex = index;
-          });
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const StudentDashboard()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const StudentNotificationsScreen(),
+              ),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const StudentProfileScreen()),
+            );
+          }
         },
       ),
     );
@@ -370,7 +398,7 @@ class _FeedbackTabBar extends StatelessWidget {
           child: _TabButton(
             label: 'To Rate',
             isActive: active == _FeedbackTab.toRate,
-            isLeft: true,
+            position: _TabPosition.left,
             onTap: () => onTabChanged(_FeedbackTab.toRate),
           ),
         ),
@@ -378,8 +406,16 @@ class _FeedbackTabBar extends StatelessWidget {
           child: _TabButton(
             label: 'My Reviews',
             isActive: active == _FeedbackTab.myReviews,
-            isLeft: false,
+            position: _TabPosition.middle,
             onTap: () => onTabChanged(_FeedbackTab.myReviews),
+          ),
+        ),
+        Expanded(
+          child: _TabButton(
+            label: "Tutor's Advice",
+            isActive: active == _FeedbackTab.tutorAdvice,
+            position: _TabPosition.right,
+            onTap: () => onTabChanged(_FeedbackTab.tutorAdvice),
           ),
         ),
       ],
@@ -387,21 +423,40 @@ class _FeedbackTabBar extends StatelessWidget {
   }
 }
 
+// ── Tab Position Enum ─────────────────────────────────────────────────────────
+
+enum _TabPosition { left, middle, right }
+
+// ── _TabButton ────────────────────────────────────────────────────────────────
+
 class _TabButton extends StatelessWidget {
   final String label;
   final bool isActive;
-  final bool isLeft;
+  final _TabPosition position;
   final VoidCallback onTap;
 
   const _TabButton({
     required this.label,
     required this.isActive,
-    required this.isLeft,
+    required this.position,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    BorderRadius borderRadius;
+    switch (position) {
+      case _TabPosition.left:
+        borderRadius = const BorderRadius.horizontal(left: Radius.circular(8));
+        break;
+      case _TabPosition.middle:
+        borderRadius = BorderRadius.zero;
+        break;
+      case _TabPosition.right:
+        borderRadius = const BorderRadius.horizontal(right: Radius.circular(8));
+        break;
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -412,16 +467,14 @@ class _TabButton extends StatelessWidget {
             color: isActive ? const Color(0xff3d6fa5) : const Color(0xFFE0E0E0),
             width: isActive ? 1.5 : 1.0,
           ),
-          borderRadius: BorderRadius.horizontal(
-            left: isLeft ? const Radius.circular(8) : Radius.zero,
-            right: !isLeft ? const Radius.circular(8) : Radius.zero,
-          ),
+          borderRadius: borderRadius,
         ),
         alignment: Alignment.center,
         child: Text(
           label,
+          textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
             color: isActive ? const Color(0xff3d6fa5) : Colors.black87,
           ),

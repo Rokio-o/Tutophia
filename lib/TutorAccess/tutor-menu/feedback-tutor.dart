@@ -5,15 +5,16 @@ import 'package:tutophia/TutorAccess/dashboard-tutor.dart';
 import 'package:tutophia/TutorAccess/notification-tutor.dart';
 import 'package:tutophia/TutorAccess/profile-tutor.dart';
 import 'package:tutophia/widgets/tutor-widgets/feedback-to-rate-card.dart';
-import 'package:tutophia/widgets/tutor-widgets/my-reviews-card.dart';
+import 'package:tutophia/widgets/tutor-widgets/my-feedback-card.dart';
+import 'package:tutophia/TutorAccess/give-feedback.dart';
 import 'package:tutophia/models/tutor-model/feedback-tutor-data.dart';
 import 'package:tutophia/data/tutor-data/feedback-tutor-repository.dart';
 import 'package:tutophia/widgets/tutor-widgets/feedback_constants.dart';
-import 'rate-students.dart';
+import 'package:tutophia/widgets/tutor-widgets/student-to-rate-card.dart';
 
 // ── Tab Enum ──────────────────────────────────────────────────────────────────
 
-enum _FeedbackTab { toRate, myReviews }
+enum _FeedbackTab { giveFeedback, myFeedback, studentsFeedback }
 
 // ── FeedbackTutorScreen ───────────────────────────────────────────────────────
 
@@ -25,47 +26,64 @@ class FeedbackTutorScreen extends StatefulWidget {
 }
 
 class _FeedbackTutorScreenState extends State<FeedbackTutorScreen> {
-  int _selectedNavIndex = 0;
-  _FeedbackTab _activeTab = _FeedbackTab.toRate;
+  _FeedbackTab _activeTab = _FeedbackTab.giveFeedback;
 
   late List<StudentToRateData> _studentsToRate;
-  late List<ReviewData> _myReviews;
+  late List<TutorFeedbackGivenData> _myFeedback;
+  late List<StudentRatingData> _studentRatings;
 
   @override
   void initState() {
     super.initState();
     _studentsToRate = List.from(sampleStudentsToRate);
-    _myReviews = List.from(sampleMyReviews);
+    _myFeedback = List.from(sampleFeedbackGiven);
+    _studentRatings = List.from(sampleStudentRatings);
   }
 
-  void _openRateScreen(StudentToRateData student) {
+  void _openGiveFeedbackScreen(StudentToRateData student) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => RateStudentScreen(
+        builder: (_) => GiveFeedbackScreen(
           student: student,
-          onSave: (rating, comment) {
+          onSave: (feedback) {
             setState(() {
               _studentsToRate.removeWhere((s) => s.id == student.id);
-              _myReviews.insert(
+              _myFeedback.insert(
                 0,
-                ReviewData(
+                TutorFeedbackGivenData(
                   id: student.id,
                   studentName: student.name,
                   program: student.program,
                   imagePath: student.imagePath,
-                  rating: rating,
-                  comment: comment,
+                  feedback: feedback,
                 ),
               );
+              _activeTab = _FeedbackTab.myFeedback;
             });
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text('Rating saved!')));
+            ).showSnackBar(const SnackBar(content: Text('Feedback saved!')));
           },
         ),
       ),
     );
+  }
+
+  // ---------- BODY CONTENT ----------
+
+  Widget _buildBodyContent() {
+    switch (_activeTab) {
+      case _FeedbackTab.giveFeedback:
+        return _GiveFeedbackList(
+          students: _studentsToRate,
+          onGiveFeedback: _openGiveFeedbackScreen,
+        );
+      case _FeedbackTab.myFeedback:
+        return _MyFeedbackList(feedbackList: _myFeedback);
+      case _FeedbackTab.studentsFeedback:
+        return _StudentsFeedbackList(ratings: _studentRatings);
+    }
   }
 
   @override
@@ -89,27 +107,24 @@ class _FeedbackTutorScreenState extends State<FeedbackTutorScreen> {
           children: [
             const HeaderTutorWdgt.feedback(),
             const SizedBox(height: 20),
+
+            // ── 3-Tab Bar ──
             _FeedbackTabBar(
               active: _activeTab,
               onTabChanged: (tab) => setState(() => _activeTab = tab),
             ),
+
             const SizedBox(height: 16),
-            Expanded(
-              child: _activeTab == _FeedbackTab.toRate
-                  ? _ToRateList(
-                      students: _studentsToRate,
-                      onRate: _openRateScreen,
-                    )
-                  : _MyReviewsList(reviews: _myReviews),
-            ),
+
+            Expanded(child: _buildBodyContent()),
           ],
         ),
       ),
 
       // ── Bottom Navigation ──
       bottomNavigationBar: BottomNavBar(
-        currentIndex: _selectedNavIndex,
-        onTap: (index) => setState(() => _selectedNavIndex = index),
+        currentIndex: 0,
+        onTap: (_) {},
         tabActions: [
           () => Navigator.pushReplacement(
             context,
@@ -143,18 +158,26 @@ class _FeedbackTabBar extends StatelessWidget {
       children: [
         Expanded(
           child: _TabButton(
-            label: 'To Rate',
-            isActive: active == _FeedbackTab.toRate,
-            isLeft: true,
-            onTap: () => onTabChanged(_FeedbackTab.toRate),
+            label: 'Give Feedback',
+            isActive: active == _FeedbackTab.giveFeedback,
+            position: _TabPosition.left,
+            onTap: () => onTabChanged(_FeedbackTab.giveFeedback),
           ),
         ),
         Expanded(
           child: _TabButton(
-            label: 'My Reviews',
-            isActive: active == _FeedbackTab.myReviews,
-            isLeft: false,
-            onTap: () => onTabChanged(_FeedbackTab.myReviews),
+            label: 'My Feedback',
+            isActive: active == _FeedbackTab.myFeedback,
+            position: _TabPosition.middle,
+            onTap: () => onTabChanged(_FeedbackTab.myFeedback),
+          ),
+        ),
+        Expanded(
+          child: _TabButton(
+            label: "Student's Feedback",
+            isActive: active == _FeedbackTab.studentsFeedback,
+            position: _TabPosition.right,
+            onTap: () => onTabChanged(_FeedbackTab.studentsFeedback),
           ),
         ),
       ],
@@ -162,21 +185,38 @@ class _FeedbackTabBar extends StatelessWidget {
   }
 }
 
+// ── Tab Position ──────────────────────────────────────────────────────────────
+
+enum _TabPosition { left, middle, right }
+
 class _TabButton extends StatelessWidget {
   final String label;
   final bool isActive;
-  final bool isLeft;
+  final _TabPosition position;
   final VoidCallback onTap;
 
   const _TabButton({
     required this.label,
     required this.isActive,
-    required this.isLeft,
+    required this.position,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    BorderRadius borderRadius;
+    switch (position) {
+      case _TabPosition.left:
+        borderRadius = const BorderRadius.horizontal(left: Radius.circular(8));
+        break;
+      case _TabPosition.middle:
+        borderRadius = BorderRadius.zero;
+        break;
+      case _TabPosition.right:
+        borderRadius = const BorderRadius.horizontal(right: Radius.circular(8));
+        break;
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -187,16 +227,14 @@ class _TabButton extends StatelessWidget {
             color: isActive ? kFeedbackBlue : kFeedbackBorder,
             width: isActive ? 1.5 : 1.0,
           ),
-          borderRadius: BorderRadius.horizontal(
-            left: isLeft ? const Radius.circular(8) : Radius.zero,
-            right: !isLeft ? const Radius.circular(8) : Radius.zero,
-          ),
+          borderRadius: borderRadius,
         ),
         alignment: Alignment.center,
         child: Text(
           label,
+          textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 11,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
             color: isActive ? kFeedbackBlue : Colors.black87,
           ),
@@ -206,20 +244,23 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-// ── _ToRateList ───────────────────────────────────────────────────────────────
+// ── _GiveFeedbackList ─────────────────────────────────────────────────────────
 
-class _ToRateList extends StatelessWidget {
+class _GiveFeedbackList extends StatelessWidget {
   final List<StudentToRateData> students;
-  final ValueChanged<StudentToRateData> onRate;
+  final ValueChanged<StudentToRateData> onGiveFeedback;
 
-  const _ToRateList({required this.students, required this.onRate});
+  const _GiveFeedbackList({
+    required this.students,
+    required this.onGiveFeedback,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (students.isEmpty) {
       return const Center(
         child: Text(
-          'All students have been rated!',
+          'All students have received feedback!',
           style: TextStyle(fontSize: 14, color: Colors.black45),
         ),
       );
@@ -228,32 +269,56 @@ class _ToRateList extends StatelessWidget {
       itemCount: students.length,
       itemBuilder: (_, i) => FeedbackToRateCard(
         student: students[i],
-        onRate: () => onRate(students[i]),
+        onGiveFeedback: () => onGiveFeedback(students[i]),
       ),
     );
   }
 }
 
-// ── _MyReviewsList ────────────────────────────────────────────────────────────
+// ── _MyFeedbackList ───────────────────────────────────────────────────────────
 
-class _MyReviewsList extends StatelessWidget {
-  final List<ReviewData> reviews;
+class _MyFeedbackList extends StatelessWidget {
+  final List<TutorFeedbackGivenData> feedbackList;
 
-  const _MyReviewsList({required this.reviews});
+  const _MyFeedbackList({required this.feedbackList});
 
   @override
   Widget build(BuildContext context) {
-    if (reviews.isEmpty) {
+    if (feedbackList.isEmpty) {
       return const Center(
         child: Text(
-          'No reviews yet.',
+          'No feedback given yet.',
           style: TextStyle(fontSize: 14, color: Colors.black45),
         ),
       );
     }
     return ListView.builder(
-      itemCount: reviews.length,
-      itemBuilder: (_, i) => MyReviewsCard(review: reviews[i]),
+      itemCount: feedbackList.length,
+      itemBuilder: (_, i) => MyFeedbackCard(feedback: feedbackList[i]),
+    );
+  }
+}
+
+// ── _StudentsFeedbackList ─────────────────────────────────────────────────────
+
+class _StudentsFeedbackList extends StatelessWidget {
+  final List<StudentRatingData> ratings;
+
+  const _StudentsFeedbackList({required this.ratings});
+
+  @override
+  Widget build(BuildContext context) {
+    if (ratings.isEmpty) {
+      return const Center(
+        child: Text(
+          'No student ratings yet.',
+          style: TextStyle(fontSize: 14, color: Colors.black45),
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: ratings.length,
+      itemBuilder: (_, i) => StudentRatingCard(rating: ratings[i]),
     );
   }
 }

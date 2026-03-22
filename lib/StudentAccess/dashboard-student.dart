@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'menu-my_booking.dart';
-import 'menu-find_tutors_student.dart';
-import 'menu-feedback.dart';
+import 'package:tutophia/StudentAccess/menu-feedback.dart';
+import 'package:tutophia/StudentAccess/menu-find_tutors_student.dart';
+import 'package:tutophia/StudentAccess/session-materials.dart';
+import 'package:tutophia/StudentAccess/session-history-student.dart';
+import 'package:tutophia/StudentAccess/notifications-student.dart';
+import 'package:tutophia/StudentAccess/profile-student.dart';
+import 'package:tutophia/StudentAccess/menu-my_booking.dart';
 import 'package:tutophia/widgets/student-widgets/student-dashboard-card.dart';
 import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
 import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
@@ -16,7 +20,7 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   int _selectedIndex = 0;
 
-  // placeholder stats - in real app, these would be dynamic based on user data
+  // placeholder stats — replace with real data from backend
   int upcomingSessions = 0;
   int pendingBookings = 0;
   int newMaterials = 0;
@@ -64,7 +68,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   _menuButton("Find Tutors", Icons.search, () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => FindTutors()),
+                      MaterialPageRoute(builder: (_) => FindTutors()),
                     );
                   }),
 
@@ -72,17 +76,24 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => StudentBookingsScreen(),
+                        builder: (_) => StudentBookingsScreen(),
                       ),
                     );
                   }),
 
-                  _menuButton("Session Materials", Icons.menu_book, () {}),
+                  _menuButton("Session Materials", Icons.menu_book, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SessionMaterialsScreen(),
+                      ),
+                    );
+                  }),
 
                   _menuButton("Feedback", Icons.feedback, () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => FeedbackScreen()),
+                      MaterialPageRoute(builder: (_) => FeedbackScreen()),
                     );
                   }),
                 ],
@@ -92,7 +103,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
               // ── Session History Button ──
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SessionHistoryScreen(),
+                    ),
+                  );
+                },
                 child: Container(
                   height: 70,
                   decoration: BoxDecoration(
@@ -127,9 +145,20 @@ class _StudentDashboardState extends State<StudentDashboard> {
       bottomNavigationBar: BottomNavStudent(
         currentIndex: _selectedIndex,
         onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          setState(() => _selectedIndex = index);
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const StudentNotificationsScreen(),
+              ),
+            );
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const StudentProfileScreen()),
+            );
+          }
         },
       ),
     );

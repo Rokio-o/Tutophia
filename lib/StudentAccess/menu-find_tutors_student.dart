@@ -5,6 +5,8 @@ import 'package:tutophia/widgets/student-widgets/tutor_card_widget.dart';
 import 'package:tutophia/widgets/student-widgets/filter_button.dart';
 import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
 import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
+import 'package:tutophia/StudentAccess/notifications-student.dart';
+import 'package:tutophia/StudentAccess/profile-student.dart';
 
 class FindTutors extends StatefulWidget {
   const FindTutors({super.key});
@@ -255,12 +257,24 @@ class _FindTutorsState extends State<FindTutors> {
       ),
 
       // ── Bottom Navigation ──
+      // ── Bottom Navigation ──
       bottomNavigationBar: BottomNavStudent(
         currentIndex: _selectedIndex,
         onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          setState(() => _selectedIndex = index);
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const StudentNotificationsScreen(),
+              ),
+            );
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const StudentProfileScreen()),
+            );
+          }
         },
       ),
     );

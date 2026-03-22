@@ -16,6 +16,7 @@ class TutophiaApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tutophia',
+      // put specific screen to run (StudentDashboard / TutorDashboard / login / splashScreen)
       home: StudentDashboard(),
     );
   }

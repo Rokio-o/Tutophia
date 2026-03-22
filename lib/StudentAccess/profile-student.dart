@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
-import 'package:tutophia/widgets/tutor-widgets/profile-nav-tutor-wdgt.dart';
-import 'package:tutophia/models/tutor-model/profile-tutor-data.dart';
-import 'package:tutophia/TutorAccess/notification-tutor.dart';
-import 'package:tutophia/TutorAccess/dashboard-tutor.dart';
-import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
+import 'package:tutophia/models/student-model/profile-student_data.dart';
+import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
+import 'package:tutophia/widgets/student-widgets/profile-nav-student-wdgt.dart';
+import 'package:tutophia/StudentAccess/dashboard-student.dart';
+import 'package:tutophia/StudentAccess/notifications-student.dart';
 import 'package:tutophia/login.dart';
 
-class TutorProfileScreen extends StatefulWidget {
-  const TutorProfileScreen({super.key});
+class StudentProfileScreen extends StatefulWidget {
+  const StudentProfileScreen({super.key});
 
   @override
-  State<TutorProfileScreen> createState() => _TutorProfileScreenState();
+  State<StudentProfileScreen> createState() => _StudentProfileScreenState();
 }
 
-class _TutorProfileScreenState extends State<TutorProfileScreen> {
-  final TutorProfileModel profile = TutorProfileModel();
+class _StudentProfileScreenState extends State<StudentProfileScreen> {
+  final StudentProfileModel profile = StudentProfileModel();
 
   File? profileImage;
   final ImagePicker picker = ImagePicker();
@@ -91,7 +91,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(builder: (_) => LoginScreen()),
-                        (route) => false,
+                        (route) => false, // clears entire nav stack
                       );
                     },
                     child: const Text("Logout"),
@@ -105,7 +105,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     );
   }
 
-  // ---------- CONFIRM CHANGES DIALOG ----------
+  // ---------- CONFIRM SAVE DIALOG ----------
   void confirmSave() {
     showDialog(
       context: context,
@@ -188,7 +188,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               height: 40,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEDEDED),
+                  backgroundColor: const Color(0xFFFFFFFF),
                   foregroundColor: Colors.black,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -273,29 +273,6 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: profile.selectedTutorType,
-                  isExpanded: true,
-                  items: profile.tutorTypes.map((type) {
-                    return DropdownMenuItem(value: type, child: Text(type));
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      profile.selectedTutorType = value!;
-                    });
-                  },
-                ),
-              ),
-            ),
           ],
         ),
         actions: [
@@ -303,48 +280,6 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
             setState(() {
               profile.firstName = first.text;
               profile.lastName = last.text;
-            });
-            Navigator.pop(context);
-            confirmSave();
-          }),
-        ],
-      ),
-    );
-  }
-
-  // ---------- EDIT SPECIALIZATION ----------
-  void editSpecialization() {
-    TextEditingController specC = TextEditingController(
-      text: profile.specialization,
-    );
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(
-          "EDIT",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Color(0xFF386FA4),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: TextField(
-            controller: specC,
-            maxLines: 3,
-            decoration: const InputDecoration(border: InputBorder.none),
-          ),
-        ),
-        actions: [
-          _dialogActions(() {
-            setState(() {
-              profile.specialization = specC.text;
             });
             Navigator.pop(context);
             confirmSave();
@@ -405,9 +340,6 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       text: profile.program,
     );
     TextEditingController yearC = TextEditingController(text: profile.year);
-    TextEditingController tutorExpC = TextEditingController(
-      text: profile.tutorExp,
-    );
 
     showDialog(
       context: context,
@@ -428,8 +360,6 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               buildBox(programC, "Program"),
               const SizedBox(height: 12),
               buildBox(yearC, "Year"),
-              const SizedBox(height: 12),
-              buildBox(tutorExpC, "Tutoring Experience"),
             ],
           ),
         ),
@@ -439,122 +369,6 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               profile.department = departmentC.text;
               profile.program = programC.text;
               profile.year = yearC.text;
-              profile.tutorExp = tutorExpC.text;
-            });
-            Navigator.pop(context);
-            confirmSave();
-          }),
-        ],
-      ),
-    );
-  }
-
-  // ---------- EDIT TUTORING SERVICE ----------
-  void editTutorService() {
-    TextEditingController modeC = TextEditingController(text: profile.mode);
-    TextEditingController sessionDurationC = TextEditingController(
-      text: profile.sessionDuration,
-    );
-    TextEditingController sessionRateC = TextEditingController(
-      text: profile.sessionRate,
-    );
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(
-          "EDIT",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Color(0xFF386FA4),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              buildBox(modeC, "Mode"),
-              const SizedBox(height: 12),
-              buildBox(sessionDurationC, "Session Duration"),
-              const SizedBox(height: 12),
-              buildBox(sessionRateC, "Session Rate"),
-            ],
-          ),
-        ),
-        actions: [
-          _dialogActions(() {
-            setState(() {
-              profile.mode = modeC.text;
-              profile.sessionDuration = sessionDurationC.text;
-              profile.sessionRate = sessionRateC.text;
-            });
-            Navigator.pop(context);
-            confirmSave();
-          }),
-        ],
-      ),
-    );
-  }
-
-  // ---------- EDIT SCHEDULE ----------
-  void editSchedule() {
-    TextEditingController scheduleC = TextEditingController(
-      text: profile.schedule,
-    );
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(
-          "EDIT",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Color(0xFF386FA4),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(children: [buildBox(scheduleC, "Available Schedule")]),
-        ),
-        actions: [
-          _dialogActions(() {
-            setState(() {
-              profile.schedule = scheduleC.text;
-            });
-            Navigator.pop(context);
-            confirmSave();
-          }),
-        ],
-      ),
-    );
-  }
-
-  // ---------- EDIT LINK SCHEDULE ----------
-  void editLinkSchedule() {
-    TextEditingController linkScheduleC = TextEditingController(
-      text: profile.linkSchedule,
-    );
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(
-          "EDIT",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Color(0xFF386FA4),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [buildBox(linkScheduleC, "Link for Documented Schedule")],
-          ),
-        ),
-        actions: [
-          _dialogActions(() {
-            setState(() {
-              profile.linkSchedule = linkScheduleC.text;
             });
             Navigator.pop(context);
             confirmSave();
@@ -625,9 +439,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: const BackButton(color: Colors.black),
+        leading: const BackButton(),
         title: const Text(
           "PROFILE",
           style: TextStyle(
@@ -686,20 +498,15 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               ],
             ),
 
-            // TUTOR TYPE
+            // PROGRAM SUBTITLE
             Text(
-              profile.selectedTutorType,
+              profile.program,
               style: const TextStyle(color: Color(0xFF386FA4)),
             ),
 
-            // AREA OF SPECIALIZATION
-            centeredSectionCard(
-              "Area of Specializations",
-              profile.specialization,
-              editSpecialization,
-            ),
+            const SizedBox(height: 20),
 
-            // DESCRIPTION
+            // STUDENT DESCRIPTION
             sectionCard(
               "Student Description",
               profile.description,
@@ -709,70 +516,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
             // ACADEMIC CREDENTIALS
             sectionCard(
               "Academic & Professional Credentials",
-              "Department: ${profile.department}\nProgram: ${profile.program}\nYear: ${profile.year}\nTutoring Experience: ${profile.tutorExp}",
+              "Department: ${profile.department}\nProgram: ${profile.program}\nYear: ${profile.year}",
               editAcademic,
-            ),
-
-            // TUTORING SERVICES
-            sectionCard(
-              "Tutoring Services",
-              "Mode: ${profile.mode}\nSession Duration: ${profile.sessionDuration}\nSession Rate: ${profile.sessionRate}",
-              editTutorService,
-            ),
-
-            // AVAILABLE SCHEDULE
-            sectionCard("Available Schedule", profile.schedule, editSchedule),
-
-            // LINK FOR DOCUMENTED SCHEDULE
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Link for Documented Schedule",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF386FA4),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit, size: 18),
-                        onPressed: () => editLinkSchedule(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEDEDED),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.black54),
-                    ),
-                    child: Text(
-                      profile.linkSchedule,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                  const Divider(
-                    height: 25,
-                    thickness: 1,
-                    color: Colors.black12,
-                  ),
-                ],
-              ),
             ),
 
             // CONTACT INFORMATION
@@ -811,20 +556,23 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         ),
       ),
 
-      bottomNavigationBar: BottomNavBar(
+      bottomNavigationBar: BottomNavStudent(
         currentIndex: 2,
-        onTap: (_) {},
-        tabActions: [
-          () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const TutorDashboard()),
-          ),
-          () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const TutorNotificationScreen()),
-          ),
-          () {}, // already on profile
-        ],
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const StudentDashboard()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const StudentNotificationsScreen(),
+              ),
+            );
+          }
+        },
       ),
     );
   }

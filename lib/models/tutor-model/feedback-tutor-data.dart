@@ -1,4 +1,5 @@
 // ── StudentToRateData ─────────────────────────────────────────────────────────
+// Students pending feedback from tutor
 
 class StudentToRateData {
   final String id;
@@ -14,9 +15,29 @@ class StudentToRateData {
   });
 }
 
-// ── ReviewData ────────────────────────────────────────────────────────────────
+// ── TutorFeedbackGivenData ────────────────────────────────────────────────────
+// Text feedback that the tutor gave to a student (no stars)
 
-class ReviewData {
+class TutorFeedbackGivenData {
+  final String id;
+  final String studentName;
+  final String program;
+  final String imagePath;
+  final String feedback;
+
+  const TutorFeedbackGivenData({
+    required this.id,
+    required this.studentName,
+    required this.program,
+    required this.feedback,
+    this.imagePath = '',
+  });
+}
+
+// ── StudentRatingData ─────────────────────────────────────────────────────────
+// Star rating + comment that a student gave to the tutor
+
+class StudentRatingData {
   final String id;
   final String studentName;
   final String program;
@@ -24,7 +45,7 @@ class ReviewData {
   final int rating; // 1–5
   final String comment;
 
-  const ReviewData({
+  const StudentRatingData({
     required this.id,
     required this.studentName,
     required this.program,
