@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:tutophia/models/student-model/profile-student_data.dart';
+import 'package:tutophia/services/repository/user_repository/user_repository.dart';
 import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
 import 'package:tutophia/widgets/student-widgets/profile-nav-student-wdgt.dart';
 import 'package:tutophia/StudentAccess/dashboard-student.dart';
@@ -18,9 +20,103 @@ class StudentProfileScreen extends StatefulWidget {
 
 class _StudentProfileScreenState extends State<StudentProfileScreen> {
   final StudentProfileModel profile = StudentProfileModel();
+  String university = '';
 
   File? profileImage;
+  String? profileImageUrl;
   final ImagePicker picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileFromFirestore();
+  }
+
+  String _asString(dynamic value) {
+    if (value is String) return value;
+    return '';
+  }
+
+  Future<void> _loadProfileFromFirestore() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final data = await UserRepository.instance.getUserProfile(uid);
+    if (!mounted || data == null) return;
+
+    final description = _asString(data['studentDescription']).isNotEmpty
+        ? _asString(data['studentDescription'])
+        : _asString(data['description']);
+
+    setState(() {
+      profile.firstName = _asString(data['firstName']).isNotEmpty
+          ? _asString(data['firstName'])
+          : profile.firstName;
+      profile.lastName = _asString(data['lastName']).isNotEmpty
+          ? _asString(data['lastName'])
+          : profile.lastName;
+      profile.description = description.isNotEmpty
+          ? description
+          : profile.description;
+      profile.department = _asString(data['department']).isNotEmpty
+          ? _asString(data['department'])
+          : profile.department;
+      profile.program = _asString(data['program']).isNotEmpty
+          ? _asString(data['program'])
+          : profile.program;
+      profile.year = _asString(data['yearSpent']).isNotEmpty
+          ? _asString(data['yearSpent'])
+          : profile.year;
+      university = _asString(data['university']).isNotEmpty
+          ? _asString(data['university'])
+          : university;
+      profile.email = _asString(data['email']).isNotEmpty
+          ? _asString(data['email'])
+          : profile.email;
+      profile.phone = _asString(data['contactNumber']).isNotEmpty
+          ? _asString(data['contactNumber'])
+          : profile.phone;
+      profile.messenger = _asString(data['messenger']).isNotEmpty
+          ? _asString(data['messenger'])
+          : profile.messenger;
+      profile.instagram = _asString(data['instagram']).isNotEmpty
+          ? _asString(data['instagram'])
+          : profile.instagram;
+      profile.others = _asString(data['otherAccounts']).isNotEmpty
+          ? _asString(data['otherAccounts'])
+          : profile.others;
+
+      final imageUrl = _asString(data['profileImageUrl']);
+      profileImageUrl = imageUrl.isNotEmpty ? imageUrl : null;
+    });
+  }
+
+  Future<void> _saveProfileChanges(Map<String, dynamic> updates) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      await UserRepository.instance.updateUserProfile(
+        uid: uid,
+        updates: updates,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update profile. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   // ---------- PICK IMAGE ----------
   Future pickImage() async {
@@ -178,7 +274,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   }
 
   // ---------- SHARED DIALOG ACTIONS ----------
-  Widget _dialogActions(VoidCallback onSave) {
+  Widget _dialogActions(Future<void> Function() onSave) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Row(
@@ -213,7 +309,9 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: onSave,
+                onPressed: () async {
+                  await onSave();
+                },
                 child: const Text("Save"),
               ),
             ),
@@ -276,13 +374,16 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           ],
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
               profile.firstName = first.text;
               profile.lastName = last.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({
+              'firstName': profile.firstName,
+              'lastName': profile.lastName,
+            });
           }),
         ],
       ),
@@ -319,12 +420,14 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           ),
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
               profile.description = desc.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({
+              'studentDescription': profile.description,
+            });
           }),
         ],
       ),
@@ -340,6 +443,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       text: profile.program,
     );
     TextEditingController yearC = TextEditingController(text: profile.year);
+    TextEditingController universityC = TextEditingController(text: university);
 
     showDialog(
       context: context,
@@ -355,6 +459,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         content: SingleChildScrollView(
           child: Column(
             children: [
+              buildBox(universityC, "Institution / University"),
+              const SizedBox(height: 12),
               buildBox(departmentC, "Department"),
               const SizedBox(height: 12),
               buildBox(programC, "Program"),
@@ -364,14 +470,20 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           ),
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
+              university = universityC.text;
               profile.department = departmentC.text;
               profile.program = programC.text;
               profile.year = yearC.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({
+              'university': university,
+              'department': profile.department,
+              'program': profile.program,
+              'yearSpent': profile.year,
+            });
           }),
         ],
       ),
@@ -417,7 +529,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           ),
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
               profile.email = emailC.text;
               profile.phone = phoneC.text;
@@ -426,7 +538,13 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               profile.others = othersC.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({
+              'email': profile.email,
+              'contactNumber': profile.phone,
+              'messenger': profile.messenger,
+              'instagram': profile.instagram,
+              'otherAccounts': profile.others,
+            });
           }),
         ],
       ),
@@ -471,6 +589,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   radius: 60,
                   backgroundImage: profileImage != null
                       ? FileImage(profileImage!)
+                      : profileImageUrl != null
+                      ? NetworkImage(profileImageUrl!)
                       : const AssetImage("assets/image/default_profile.jpg")
                             as ImageProvider,
                 ),
@@ -516,7 +636,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             // ACADEMIC CREDENTIALS
             sectionCard(
               "Academic & Professional Credentials",
-              "Department: ${profile.department}\nProgram: ${profile.program}\nYear: ${profile.year}",
+              "Institution/University: ${university.isEmpty ? 'N/A' : university}\nDepartment: ${profile.department}\nProgram: ${profile.program}\nYear: ${profile.year}",
               editAcademic,
             ),
 

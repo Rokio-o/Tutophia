@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/TutorAccess/registration2-tutor.dart';
+import 'package:tutophia/services/repository/authentication_repository/authentication_repository.dart';
+import 'package:tutophia/services/repository/authentication_repository/exceptions/signup_email_password_failure.dart';
 import 'package:tutophia/successful-reg.dart';
 
 class TermsandConditionsTutor extends StatefulWidget {
-  const TermsandConditionsTutor({super.key});
+  final Map<String, dynamic> registrationData;
+
+  const TermsandConditionsTutor({super.key, required this.registrationData});
 
   @override
   State<TermsandConditionsTutor> createState() =>
@@ -12,6 +16,60 @@ class TermsandConditionsTutor extends StatefulWidget {
 
 class TermsandConditionsTutorState extends State<TermsandConditionsTutor> {
   final List<bool> isChecked = List.generate(11, (index) => false);
+  bool _isCreatingAccount = false;
+
+  Future<void> _createTutorAccount() async {
+    if (_isCreatingAccount) return;
+
+    final email = (widget.registrationData['email'] as String?)?.trim() ?? '';
+    final password = widget.registrationData['password'] as String? ?? '';
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Missing email/password. Please complete registration.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isCreatingAccount = true);
+
+    try {
+      await AuthenticationRepository.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+        role: 'tutor',
+        profileData: widget.registrationData,
+      );
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const SuccessfulRegistration()),
+      );
+    } on SignUpWithEmailAndPasswordFailure catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong while creating your account.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isCreatingAccount = false);
+      }
+    }
+  }
 
   final List<Map<String, String>> termsContent = [
     {
@@ -78,7 +136,11 @@ class TermsandConditionsTutorState extends State<TermsandConditionsTutor> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => TutorRegistration2()),
+              MaterialPageRoute(
+                builder: (context) => TutorRegistration2(
+                  registrationData: widget.registrationData,
+                ),
+              ),
             );
           },
         ),
@@ -126,16 +188,8 @@ class TermsandConditionsTutorState extends State<TermsandConditionsTutor> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: isChecked[10]
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      SuccessfulRegistration(),
-                                ),
-                              );
-                            }
+                      onPressed: (isChecked[10] && !_isCreatingAccount)
+                          ? _createTutorAccount
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF386FA4),
@@ -143,9 +197,11 @@ class TermsandConditionsTutorState extends State<TermsandConditionsTutor> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
-                        'CREATE ACCOUNT',
-                        style: TextStyle(
+                      child: Text(
+                        _isCreatingAccount
+                            ? 'CREATING ACCOUNT...'
+                            : 'CREATE ACCOUNT',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),

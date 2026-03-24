@@ -1,12 +1,59 @@
 import 'package:flutter/material.dart';
 import 'login.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart';
 
-class ForgotPasswordScreen extends StatelessWidget {
-  final double headerHeight = 250;
+class ForgotPasswordScreen extends StatefulWidget {
+  @override
+  _ForgotPasswordScreenState createState() => _ForgotPasswordScreenState();
+}
+ 
+
+
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final formKey = GlobalKey<FormState>();
+  final TextEditingController emailController = TextEditingController();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
+  }
+
+   final double headerHeight = 250;
   //Colors
   static const Color kBlue = Color(0xFF386FA4);
   static const Color kOrange = Color(0xFFF9AB55);
   static const Color kText = Color(0xFF0F0F0F);
+
+  Future resetPassword() async {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      try {
+        await FirebaseAuth.instance.sendPasswordResetEmail(email: emailController.text.trim());
+        Get.snackbar(
+            "Success",
+            "Password reset email sent! Please check your inbox.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.greenAccent.withValues(alpha: 0.1),
+            colorText: Colors.green,
+          );
+      } catch (e) {
+        Get.snackbar(
+            "Error",
+            "Failed to send password reset email.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+            colorText: Colors.red,
+          );
+      }
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +175,8 @@ class ForgotPasswordScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.grey.shade300),
                         ),
-                        child: TextField(
+                        child: TextFormField(
+                          controller: emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: 'Enter your email address',
@@ -153,7 +201,10 @@ class ForgotPasswordScreen extends StatelessWidget {
                         height: screenHeight * 0.065,
                         child: ElevatedButton(
                           // password add
-                          onPressed: () {},
+                          onPressed: () {
+                            // Call the reset password function
+                            resetPassword();
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: kBlue,
                             shape: RoundedRectangleBorder(
@@ -233,5 +284,6 @@ class ForgotPasswordScreen extends StatelessWidget {
         ],
       ),
     );
+
   }
 }

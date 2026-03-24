@@ -4,7 +4,9 @@ import 'package:tutophia/TutorAccess/registration1-tutor.dart';
 import 'package:tutophia/TutorAccess/terms-condition-tutor.dart';
 
 class TutorRegistration2 extends StatefulWidget {
-  const TutorRegistration2({super.key});
+  final Map<String, dynamic> registrationData;
+
+  const TutorRegistration2({super.key, required this.registrationData});
 
   @override
   State<TutorRegistration2> createState() => _TutorRegistration2State();
@@ -674,7 +676,43 @@ class _TutorRegistration2State extends State<TutorRegistration2> {
                         () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const TermsandConditionsTutor(),
+                            builder: (_) => TermsandConditionsTutor(
+                              registrationData: {
+                                ...widget.registrationData,
+                                'tutorType': tutorType,
+                                'university': universityController.text.trim(),
+                                'department': department,
+                                'program': programController.text.trim(),
+                                'yearSpent': yearSpent,
+                                'specializations': specializationControllers
+                                    .map((c) => c.text.trim())
+                                    .where((value) => value.isNotEmpty)
+                                    .toList(),
+                                'tutoringExperience':
+                                    tutoringExperienceController.text.trim(),
+                                'teachingDescription':
+                                    teachingDescriptionController.text.trim(),
+                                'modeOfTutoring': [
+                                  if (isOnlineSelected) 'online',
+                                  if (isFaceToFaceSelected) 'face_to_face',
+                                  if (isHybridSelected) 'hybrid',
+                                ],
+                                'sessionDurationHours':
+                                    sessionDurationController.text.trim(),
+                                'sessionRate': sessionRateController.text
+                                    .trim(),
+                                'sessionRateMode': sessionRateMode,
+                                'availableSchedule': availableScheduleController
+                                    .text
+                                    .trim(),
+                                'scheduleLink': scheduleLinkController.text
+                                    .trim(),
+                                'contactNumber': contactController.text.trim(),
+                                'messenger': messengerController.text.trim(),
+                                'instagram': instagramController.text.trim(),
+                                'otherAccounts': othersController.text.trim(),
+                              },
+                            ),
                           ),
                         ),
                       );

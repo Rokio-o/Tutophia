@@ -4,7 +4,9 @@ import 'package:tutophia/StudentAccess/registration1-student.dart';
 import 'package:tutophia/StudentAccess/terms-condition-student.dart';
 
 class StudentRegistration2 extends StatefulWidget {
-  const StudentRegistration2({super.key});
+  final Map<String, dynamic> registrationData;
+
+  const StudentRegistration2({super.key, required this.registrationData});
 
   @override
   State<StudentRegistration2> createState() => _StudentRegistration2State();
@@ -239,7 +241,15 @@ class _StudentRegistration2State extends State<StudentRegistration2> {
                         () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const TermsandConditionsStudent(),
+                            builder: (_) => TermsandConditionsStudent(
+                              registrationData: {
+                                ...widget.registrationData,
+                                'contactNumber': contactController.text.trim(),
+                                'messenger': messengerController.text.trim(),
+                                'instagram': instagramController.text.trim(),
+                                'otherAccounts': othersController.text.trim(),
+                              },
+                            ),
                           ),
                         ),
                       );

@@ -735,7 +735,26 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
                         () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => StudentRegistration2(),
+                            builder: (_) => StudentRegistration2(
+                              registrationData: {
+                                'accountType': 'student',
+                                'firstName': firstNameController.text.trim(),
+                                'lastName': lastNameController.text.trim(),
+                                'gender': gender,
+                                'birthdate': selectedDate?.toIso8601String(),
+                                'age': age,
+                                'address': addressController.text.trim(),
+                                'university': universityController.text.trim(),
+                                'department': department,
+                                'program': programController.text.trim(),
+                                'yearSpent': year,
+                                'studentDescription':
+                                    studentDescriptionController.text.trim(),
+                                'email': emailController.text.trim(),
+                                'userName': usernameController.text.trim(),
+                                'password': passwordController.text,
+                              },
+                            ),
                           ),
                         ),
                       );

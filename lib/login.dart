@@ -1,11 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/services/repository/authentication_repository/authentication_repository.dart';
+import 'package:tutophia/services/repository/authentication_repository/exceptions/signup_email_password_failure.dart';
+import 'package:tutophia/services/repository/user_repository/user_repository.dart';
 import 'package:tutophia/registration-type.dart';
 import 'StudentAccess/dashboard-student.dart';
 import 'TutorAccess/dashboard-tutor.dart';
 import 'forgot-password.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final double headerHeight = 250;
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool isPasswordVisible = false;
+  bool isLoggingIn = false;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    if (isLoggingIn) return;
+
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your email and password.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => isLoggingIn = true);
+
+    try {
+      final credential = await AuthenticationRepository.instance
+          .loginWithEmailAndPassword(email, password);
+
+      final uid = credential.user?.uid;
+      if (uid == null) {
+        throw const SignUpWithEmailAndPasswordFailure(
+          'Unable to determine your account. Please try again.',
+        );
+      }
+
+      final role = await UserRepository.instance.getUserRole(uid);
+      if (!mounted) return;
+
+      if (role == 'tutor') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => TutorDashboard()),
+        );
+        return;
+      }
+
+      if (role == 'student') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => StudentDashboard()),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account role not found. Please contact support.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } on SignUpWithEmailAndPasswordFailure catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login failed. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isLoggingIn = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +179,7 @@ class LoginScreen extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Username',
+                          'Email',
                           style: TextStyle(
                             fontSize: screenWidth * 0.035,
                             fontWeight: FontWeight.w500,
@@ -104,8 +199,10 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ),
                         child: TextField(
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            hintText: 'Enter your username',
+                            hintText: 'Enter your email',
 
                             hintStyle: TextStyle(
                               color: Colors.grey[400],
@@ -146,7 +243,8 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ),
                         child: TextField(
-                          obscureText: true,
+                          controller: passwordController,
+                          obscureText: !isPasswordVisible,
                           decoration: InputDecoration(
                             hintText: 'Enter your password',
                             hintStyle: TextStyle(
@@ -158,10 +256,19 @@ class LoginScreen extends StatelessWidget {
                               horizontal: screenWidth * 0.04,
                               vertical: screenHeight * 0.018,
                             ),
-                            suffixIcon: Icon(
-                              Icons.visibility,
-                              size: screenWidth * 0.05,
-                              color: const Color.fromARGB(255, 0, 0, 0),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  isPasswordVisible = !isPasswordVisible;
+                                });
+                              },
+                              icon: Icon(
+                                isPasswordVisible
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                size: screenWidth * 0.05,
+                                color: const Color.fromARGB(255, 0, 0, 0),
+                              ),
                             ),
                           ),
                           style: TextStyle(fontSize: screenWidth * 0.035),
@@ -202,15 +309,7 @@ class LoginScreen extends StatelessWidget {
                         width: double.infinity,
                         height: screenHeight * 0.065,
                         child: ElevatedButton(
-                          onPressed: () {
-                            // student muna for the meantile, but it should be change based on the credentials
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TutorDashboard(),
-                              ),
-                            );
-                          },
+                          onPressed: isLoggingIn ? null : _login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFF386FA4),
                             shape: RoundedRectangleBorder(
@@ -219,7 +318,7 @@ class LoginScreen extends StatelessWidget {
                             elevation: 0,
                           ),
                           child: Text(
-                            'LOGIN',
+                            isLoggingIn ? 'LOGGING IN...' : 'LOGIN',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -248,7 +347,8 @@ class LoginScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => RegistrationType(),
+                                  builder: (context) =>
+                                      const RegistrationType(),
                                 ),
                               );
                             },

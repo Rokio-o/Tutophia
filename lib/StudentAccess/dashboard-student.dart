@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tutophia/StudentAccess/menu-feedback.dart';
 import 'package:tutophia/StudentAccess/menu-find_tutors_student.dart';
 import 'package:tutophia/StudentAccess/session-materials.dart';
@@ -6,6 +7,7 @@ import 'package:tutophia/StudentAccess/session-history-student.dart';
 import 'package:tutophia/StudentAccess/notifications-student.dart';
 import 'package:tutophia/StudentAccess/profile-student.dart';
 import 'package:tutophia/StudentAccess/menu-my_booking.dart';
+import 'package:tutophia/services/repository/user_repository/user_repository.dart';
 import 'package:tutophia/widgets/student-widgets/student-dashboard-card.dart';
 import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
 import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
@@ -19,11 +21,45 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   int _selectedIndex = 0;
+  String studentName = 'Student';
+  String studentCourse = '';
 
   // placeholder stats — replace with real data from backend
   int upcomingSessions = 0;
   int pendingBookings = 0;
   int newMaterials = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardProfile();
+  }
+
+  String _asString(dynamic value) {
+    if (value is String) return value;
+    return '';
+  }
+
+  Future<void> _loadDashboardProfile() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final data = await UserRepository.instance.getUserProfile(uid);
+    if (!mounted || data == null) return;
+
+    final firstName = _asString(data['firstName']);
+    final lastName = _asString(data['lastName']);
+    final fullName = '$firstName $lastName'.trim();
+    final program = _asString(data['program']);
+    final university = _asString(data['university']);
+
+    setState(() {
+      studentName = fullName.isNotEmpty ? fullName : studentName;
+      studentCourse = program.isNotEmpty
+          ? program
+          : (university.isNotEmpty ? university : studentCourse);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +81,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
               // ── Profile Card with Stats ──
               StudentDashboardCard(
-                name: "Student Name",
-                course: "Course",
+                name: studentName,
+                course: studentCourse,
                 upcomingSessions: upcomingSessions,
                 pendingBookings: pendingBookings,
                 newMaterials: newMaterials,

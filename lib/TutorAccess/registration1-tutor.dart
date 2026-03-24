@@ -639,7 +639,20 @@ class _TutorRegistration1State extends State<TutorRegistration1> {
                         () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => TutorRegistration2(),
+                            builder: (_) => TutorRegistration2(
+                              registrationData: {
+                                'accountType': 'tutor',
+                                'firstName': firstNameController.text.trim(),
+                                'lastName': lastNameController.text.trim(),
+                                'gender': gender,
+                                'birthdate': selectedDate?.toIso8601String(),
+                                'age': age,
+                                'address': addressController.text.trim(),
+                                'email': emailController.text.trim(),
+                                'userName': usernameController.text.trim(),
+                                'password': passwordController.text,
+                              },
+                            ),
                           ),
                         ),
                       );

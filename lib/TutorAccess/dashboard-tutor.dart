@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tutophia/TutorAccess/tutor-menu/session-requests-tutor.dart';
+import 'package:tutophia/services/repository/user_repository/user_repository.dart';
 import 'package:tutophia/widgets/tutor-widgets/tutor-dashboard-card.dart';
 import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
 import 'package:tutophia/widgets/tutor-widgets/header-tutor-wdgt.dart';
@@ -20,12 +22,46 @@ class _TutorDashboardState extends State<TutorDashboard> {
   int _selectedIndex = 0;
 
   // These would be fetched dynamically per logged-in user
-  final String tutorName = "Tutor Name";
-  final String tutorType = "Student Tutor";
-  final String tutorCourse = "Course";
+  String tutorName = "Tutor";
+  String tutorType = "Tutor";
+  String tutorCourse = "";
   final String? tutorProfileImage = " ";
   int upcomingSessions = 0;
   int bookingRequests = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardProfile();
+  }
+
+  String _asString(dynamic value) {
+    if (value is String) return value;
+    return '';
+  }
+
+  Future<void> _loadDashboardProfile() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final data = await UserRepository.instance.getUserProfile(uid);
+    if (!mounted || data == null) return;
+
+    final firstName = _asString(data['firstName']);
+    final lastName = _asString(data['lastName']);
+    final fullName = '$firstName $lastName'.trim();
+    final dbTutorType = _asString(data['tutorType']);
+    final program = _asString(data['program']);
+    final university = _asString(data['university']);
+
+    setState(() {
+      tutorName = fullName.isNotEmpty ? fullName : tutorName;
+      tutorType = dbTutorType.isNotEmpty ? dbTutorType : tutorType;
+      tutorCourse = program.isNotEmpty
+          ? program
+          : (university.isNotEmpty ? university : tutorCourse);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

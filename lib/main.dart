@@ -5,8 +5,14 @@ import 'splashScreen.dart';
 import 'login.dart';
 import 'TutorAccess/dashboard-tutor.dart';
 import 'StudentAccess/dashboard-student.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(TutophiaApp());
 }
 
@@ -17,7 +23,7 @@ class TutophiaApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Tutophia',
       // put specific screen to run (StudentDashboard / TutorDashboard / login / splashScreen)
-      home: StudentDashboard(),
+      home: SplashScreen(),
     );
   }
 }

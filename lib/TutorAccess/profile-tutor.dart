@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:tutophia/widgets/tutor-widgets/profile-nav-tutor-wdgt.dart';
 import 'package:tutophia/models/tutor-model/profile-tutor-data.dart';
 import 'package:tutophia/TutorAccess/notification-tutor.dart';
 import 'package:tutophia/TutorAccess/dashboard-tutor.dart';
+import 'package:tutophia/services/repository/user_repository/user_repository.dart';
 import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
 import 'package:tutophia/login.dart';
 
@@ -18,9 +20,143 @@ class TutorProfileScreen extends StatefulWidget {
 
 class _TutorProfileScreenState extends State<TutorProfileScreen> {
   final TutorProfileModel profile = TutorProfileModel();
+  String university = '';
 
   File? profileImage;
+  String? profileImageUrl;
   final ImagePicker picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileFromFirestore();
+  }
+
+  String _asString(dynamic value) {
+    if (value is String) return value;
+    return '';
+  }
+
+  String _joinIfList(dynamic value) {
+    if (value is Iterable) {
+      return value
+          .map((e) => e.toString())
+          .where((e) => e.isNotEmpty)
+          .join(', ');
+    }
+    return _asString(value);
+  }
+
+  Future<void> _loadProfileFromFirestore() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final data = await UserRepository.instance.getUserProfile(uid);
+    if (!mounted || data == null) return;
+
+    final tutorType = _asString(data['tutorType']);
+    final description = _asString(data['teachingDescription']).isNotEmpty
+        ? _asString(data['teachingDescription'])
+        : _asString(data['description']);
+    final specialization = _joinIfList(data['specializations']);
+    final mode = _joinIfList(data['modeOfTutoring']);
+    final sessionRate = _asString(data['sessionRate']);
+    final sessionRateMode = _asString(data['sessionRateMode']);
+    final sessionDuration = _asString(data['sessionDurationHours']);
+
+    setState(() {
+      profile.firstName = _asString(data['firstName']).isNotEmpty
+          ? _asString(data['firstName'])
+          : profile.firstName;
+      profile.lastName = _asString(data['lastName']).isNotEmpty
+          ? _asString(data['lastName'])
+          : profile.lastName;
+      profile.selectedTutorType = tutorType.isNotEmpty
+          ? tutorType
+          : profile.selectedTutorType;
+      profile.specialization = specialization.isNotEmpty
+          ? specialization
+          : profile.specialization;
+      profile.description = description.isNotEmpty
+          ? description
+          : profile.description;
+      profile.department = _asString(data['department']).isNotEmpty
+          ? _asString(data['department'])
+          : profile.department;
+      profile.program = _asString(data['program']).isNotEmpty
+          ? _asString(data['program'])
+          : profile.program;
+      profile.year = _asString(data['yearSpent']).isNotEmpty
+          ? _asString(data['yearSpent'])
+          : profile.year;
+      university = _asString(data['university']).isNotEmpty
+          ? _asString(data['university'])
+          : university;
+      profile.tutorExp = _asString(data['tutoringExperience']).isNotEmpty
+          ? _asString(data['tutoringExperience'])
+          : profile.tutorExp;
+      profile.mode = mode.isNotEmpty ? mode : profile.mode;
+      profile.sessionDuration = sessionDuration.isNotEmpty
+          ? '$sessionDuration hour(s)'
+          : profile.sessionDuration;
+      profile.sessionRate = sessionRate.isNotEmpty
+          ? (sessionRateMode.isNotEmpty
+                ? '$sessionRate ($sessionRateMode)'
+                : sessionRate)
+          : profile.sessionRate;
+      profile.schedule = _asString(data['availableSchedule']).isNotEmpty
+          ? _asString(data['availableSchedule'])
+          : profile.schedule;
+      profile.linkSchedule = _asString(data['scheduleLink']).isNotEmpty
+          ? _asString(data['scheduleLink'])
+          : profile.linkSchedule;
+      profile.email = _asString(data['email']).isNotEmpty
+          ? _asString(data['email'])
+          : profile.email;
+      profile.phone = _asString(data['contactNumber']).isNotEmpty
+          ? _asString(data['contactNumber'])
+          : profile.phone;
+      profile.messenger = _asString(data['messenger']).isNotEmpty
+          ? _asString(data['messenger'])
+          : profile.messenger;
+      profile.instagram = _asString(data['instagram']).isNotEmpty
+          ? _asString(data['instagram'])
+          : profile.instagram;
+      profile.others = _asString(data['otherAccounts']).isNotEmpty
+          ? _asString(data['otherAccounts'])
+          : profile.others;
+
+      final imageUrl = _asString(data['profileImageUrl']);
+      profileImageUrl = imageUrl.isNotEmpty ? imageUrl : null;
+    });
+  }
+
+  Future<void> _saveProfileChanges(Map<String, dynamic> updates) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      await UserRepository.instance.updateUserProfile(
+        uid: uid,
+        updates: updates,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update profile. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   // ---------- PICK IMAGE ----------
   Future pickImage() async {
@@ -178,7 +314,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   // ---------- SHARED DIALOG ACTIONS ----------
-  Widget _dialogActions(VoidCallback onSave) {
+  Widget _dialogActions(Future<void> Function() onSave) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Row(
@@ -213,7 +349,9 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: onSave,
+                onPressed: () async {
+                  await onSave();
+                },
                 child: const Text("Save"),
               ),
             ),
@@ -299,13 +437,17 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ],
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
               profile.firstName = first.text;
               profile.lastName = last.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({
+              'firstName': profile.firstName,
+              'lastName': profile.lastName,
+              'tutorType': profile.selectedTutorType,
+            });
           }),
         ],
       ),
@@ -342,12 +484,14 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
               profile.specialization = specC.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({
+              'specializations': [profile.specialization],
+            });
           }),
         ],
       ),
@@ -384,12 +528,14 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
               profile.description = desc.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({
+              'teachingDescription': profile.description,
+            });
           }),
         ],
       ),
@@ -408,6 +554,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     TextEditingController tutorExpC = TextEditingController(
       text: profile.tutorExp,
     );
+    TextEditingController universityC = TextEditingController(text: university);
 
     showDialog(
       context: context,
@@ -423,6 +570,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         content: SingleChildScrollView(
           child: Column(
             children: [
+              buildBox(universityC, "Institution / University"),
+              const SizedBox(height: 12),
               buildBox(departmentC, "Department"),
               const SizedBox(height: 12),
               buildBox(programC, "Program"),
@@ -434,15 +583,22 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
+              university = universityC.text;
               profile.department = departmentC.text;
               profile.program = programC.text;
               profile.year = yearC.text;
               profile.tutorExp = tutorExpC.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({
+              'university': university,
+              'department': profile.department,
+              'program': profile.program,
+              'yearSpent': profile.year,
+              'tutoringExperience': profile.tutorExp,
+            });
           }),
         ],
       ),
@@ -482,14 +638,18 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
               profile.mode = modeC.text;
               profile.sessionDuration = sessionDurationC.text;
               profile.sessionRate = sessionRateC.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({
+              'modeOfTutoring': [profile.mode],
+              'sessionDurationHours': profile.sessionDuration,
+              'sessionRate': profile.sessionRate,
+            });
           }),
         ],
       ),
@@ -517,12 +677,12 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           child: Column(children: [buildBox(scheduleC, "Available Schedule")]),
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
               profile.schedule = scheduleC.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({'availableSchedule': profile.schedule});
           }),
         ],
       ),
@@ -552,12 +712,12 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
               profile.linkSchedule = linkScheduleC.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({'scheduleLink': profile.linkSchedule});
           }),
         ],
       ),
@@ -603,7 +763,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           ),
         ),
         actions: [
-          _dialogActions(() {
+          _dialogActions(() async {
             setState(() {
               profile.email = emailC.text;
               profile.phone = phoneC.text;
@@ -612,7 +772,13 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
               profile.others = othersC.text;
             });
             Navigator.pop(context);
-            confirmSave();
+            await _saveProfileChanges({
+              'email': profile.email,
+              'contactNumber': profile.phone,
+              'messenger': profile.messenger,
+              'instagram': profile.instagram,
+              'otherAccounts': profile.others,
+            });
           }),
         ],
       ),
@@ -659,6 +825,8 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                   radius: 60,
                   backgroundImage: profileImage != null
                       ? FileImage(profileImage!)
+                      : profileImageUrl != null
+                      ? NetworkImage(profileImageUrl!)
                       : const AssetImage("assets/image/default_profile.jpg")
                             as ImageProvider,
                 ),
@@ -709,7 +877,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
             // ACADEMIC CREDENTIALS
             sectionCard(
               "Academic & Professional Credentials",
-              "Department: ${profile.department}\nProgram: ${profile.program}\nYear: ${profile.year}\nTutoring Experience: ${profile.tutorExp}",
+              "Institution/University: ${university.isEmpty ? 'N/A' : university}\nDepartment: ${profile.department}\nProgram: ${profile.program}\nYear: ${profile.year}\nTutoring Experience: ${profile.tutorExp}",
               editAcademic,
             ),
 
