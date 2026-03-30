@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 import 'package:tutophia/TutorAccess/tutor-menu/session-requests-tutor.dart';
 import 'package:tutophia/services/repository/user_repository/user_repository.dart';
+import 'package:tutophia/data/student-data/booking_repository.dart';
 import 'package:tutophia/widgets/tutor-widgets/tutor-dashboard-card.dart';
 import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
 import 'package:tutophia/widgets/tutor-widgets/header-tutor-wdgt.dart';
@@ -20,6 +22,8 @@ class TutorDashboard extends StatefulWidget {
 
 class _TutorDashboardState extends State<TutorDashboard> {
   int _selectedIndex = 0;
+  StreamSubscription<int>? _pendingSub;
+  StreamSubscription<int>? _upcomingSub;
 
   // These would be fetched dynamically per logged-in user
   String tutorName = "Tutor";
@@ -33,6 +37,14 @@ class _TutorDashboardState extends State<TutorDashboard> {
   void initState() {
     super.initState();
     _loadDashboardProfile();
+    _bindBookingCounts();
+  }
+
+  @override
+  void dispose() {
+    _pendingSub?.cancel();
+    _upcomingSub?.cancel();
+    super.dispose();
   }
 
   String _asString(dynamic value) {
@@ -61,6 +73,25 @@ class _TutorDashboardState extends State<TutorDashboard> {
           ? program
           : (university.isNotEmpty ? university : tutorCourse);
     });
+  }
+
+  void _bindBookingCounts() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    _pendingSub = BookingRepository.instance
+        .watchTutorPendingCount(uid)
+        .listen((count) {
+          if (!mounted) return;
+          setState(() => bookingRequests = count);
+        });
+
+    _upcomingSub = BookingRepository.instance
+        .watchTutorUpcomingApprovedCount(uid)
+        .listen((count) {
+          if (!mounted) return;
+          setState(() => upcomingSessions = count);
+        });
   }
 
   @override

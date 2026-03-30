@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tutophia/TutorAccess/dashboard-tutor.dart';
 import 'package:tutophia/TutorAccess/profile-tutor.dart';
@@ -7,8 +8,8 @@ import 'package:tutophia/widgets/tutor-widgets/session-card.dart';
 import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
 import 'package:tutophia/widgets/tutor-widgets/header-tutor-wdgt.dart';
 import 'package:tutophia/TutorAccess/tutor-menu/view-session-details.dart';
-import 'package:tutophia/models/tutor-model/session-requests-data.dart';
-import 'package:tutophia/data/tutor-data/session-requests-repository.dart';
+import 'package:tutophia/data/student-data/booking_repository.dart';
+import 'package:tutophia/models/student-model/booking_data.dart';
 
 class SessionRequestsScreen extends StatefulWidget {
   const SessionRequestsScreen({super.key});
@@ -20,19 +21,6 @@ class SessionRequestsScreen extends StatefulWidget {
 class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
   String _selectedTab = 'Requests';
   int _selectedIndex = 0;
-
-  // ── State lists — mutable copies from data file ───────────────────────────
-  late List<SessionRequestStudentData> _requestStudents;
-  late List<SessionRequestStudentData> _approvedStudents;
-  late List<SessionRequestStudentData> _cancelledStudents;
-
-  @override
-  void initState() {
-    super.initState();
-    _requestStudents = List.from(sampleRequestStudents);
-    _approvedStudents = List.from(sampleApprovedStudents);
-    _cancelledStudents = List.from(sampleCancelledStudents);
-  }
 
   Widget _tabButton(String label) {
     final bool selected = _selectedTab == label;
@@ -58,6 +46,8 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tutorId = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -77,12 +67,8 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header ──
               const HeaderTutorWdgt.sessionRequests(),
-
               const SizedBox(height: 20),
-
-              // ── Tab Buttons ──
               Row(
                 children: [
                   _tabButton('Requests'),
@@ -90,59 +76,110 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
                   _tabButton('Approved'),
                 ],
               ),
-
               const SizedBox(height: 20),
+              if (tutorId == null)
+                const Center(
+                  child: Text('Please login to view requests.'),
+                )
+              else
+                StreamBuilder<List<BookingData>>(
+                  stream: BookingRepository.instance.watchTutorBookings(tutorId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-              // ── Requests Tab ──
-              if (_selectedTab == 'Requests')
-                ..._requestStudents.map(
-                  (s) => Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
-                    child: RequestCard(
-                      name: s.name,
-                      course: s.course,
-                      buttonText: 'View Request',
-                      onButtonTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SessionRequestDetailsScreen(),
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error loading requests: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.redAccent),
                         ),
-                      ),
-                    ),
-                  ),
-                ),
+                      );
+                    }
 
-              // ── Approved Tab ──
-              if (_selectedTab == 'Approved') ...[
-                ..._approvedStudents.map(
-                  (s) => Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
-                    child: RequestCard(
-                      name: s.name,
-                      course: s.course,
-                      buttonText: 'View Session Details',
-                      onButtonTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SessionDetailsScreen(),
+                    final all = snapshot.data ?? const <BookingData>[];
+                    final pending = all
+                        .where((b) => b.status == BookingData.statusPending)
+                        .toList();
+                    final approved = all
+                        .where((b) => b.status == BookingData.statusApproved)
+                        .toList();
+                    final cancelled = all
+                        .where((b) => b.status == BookingData.statusCancelled)
+                        .toList();
+
+                    if (_selectedTab == 'Requests') {
+                      if (pending.isEmpty) {
+                        return const Center(child: Text('No pending requests.'));
+                      }
+
+                      return Column(
+                        children: pending
+                            .map(
+                              (s) => Padding(
+                                padding: const EdgeInsets.only(bottom: 18),
+                                child: RequestCard(
+                                  name: s.studentName,
+                                  course: s.studentProgram,
+                                  buttonText: 'View Request',
+                                  onButtonTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          SessionRequestDetailsScreen(
+                                            booking: s,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      );
+                    }
+
+                    if (approved.isEmpty && cancelled.isEmpty) {
+                      return const Center(child: Text('No approved sessions.'));
+                    }
+
+                    return Column(
+                      children: [
+                        ...approved.map(
+                          (s) => Padding(
+                            padding: const EdgeInsets.only(bottom: 18),
+                            child: RequestCard(
+                              name: s.studentName,
+                              course: s.studentProgram,
+                              buttonText: 'View Session Details',
+                              onButtonTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SessionDetailsScreen(
+                                    booking: s,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
+                        ...cancelled.map(
+                          (s) => Padding(
+                            padding: const EdgeInsets.only(bottom: 18),
+                            child: CancelledRequestCard(
+                              name: s.studentName,
+                              course: s.studentProgram,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-                ..._cancelledStudents.map(
-                  (s) => Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
-                    child: CancelledRequestCard(name: s.name, course: s.course),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
       ),
-
-      // ── Bottom Navigation ──
       bottomNavigationBar: BottomNavBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),

@@ -47,6 +47,7 @@ Future<List<TutorData>> fetchAllTutors() async {
         final availableSchedule = _toStringList(data['availableSchedule']);
 
       return TutorData(
+        uid: doc.id,
         name: fullName,
         role: data['tutorType'] as String? ?? 'Student Tutor',
         location: data['address'] as String? ?? 'Not specified',

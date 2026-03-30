@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tutophia/data/student-data/booking_repository.dart';
+import 'package:tutophia/models/student-model/booking_data.dart';
 import 'package:tutophia/widgets/student-widgets/booking_card_widget.dart';
 import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
 import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
@@ -18,7 +20,8 @@ class _StudentBookingsScreenState extends State<StudentBookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Screen that displays all student bookings.
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -34,35 +37,91 @@ class _StudentBookingsScreenState extends State<StudentBookingsScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              // ── Bookings Header ──
               child: const HeaderStudentWdgt.bookings(),
             ),
-
             const SizedBox(height: 20),
+            if (uid == null)
+              const Expanded(
+                child: Center(
+                  child: Text(
+                    'Please log in to view bookings.',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: StreamBuilder<List<BookingData>>(
+                  stream: BookingRepository.instance.watchStudentBookings(uid),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-            Expanded(
-              child: activeBookings.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "No bookings yet.",
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error loading bookings: ${snapshot.error}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.redAccent),
+                        ),
+                      );
+                    }
+
+                    final bookings = snapshot.data ?? const <BookingData>[];
+                    if (bookings.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'No bookings yet.',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      );
+                    }
+
+                    return ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: activeBookings.length,
-                      itemBuilder: (context, index) {
-                        return BookingCardWidget(
-                          booking: activeBookings[index],
-                        );
-                      },
-                    ),
-            ),
+                      children: [
+                        _buildStatusSection(
+                          title: 'Pending',
+                          bookings: bookings
+                              .where(
+                                (b) => b.status == BookingData.statusPending,
+                              )
+                              .toList(),
+                        ),
+                        _buildStatusSection(
+                          title: 'Approved',
+                          bookings: bookings
+                              .where(
+                                (b) => b.status == BookingData.statusApproved,
+                              )
+                              .toList(),
+                        ),
+                        _buildStatusSection(
+                          title: 'Cancelled',
+                          bookings: bookings
+                              .where(
+                                (b) => b.status == BookingData.statusCancelled,
+                              )
+                              .toList(),
+                        ),
+                        _buildStatusSection(
+                          title: 'Completed',
+                          bookings: bookings
+                              .where(
+                                (b) => b.status == BookingData.statusCompleted,
+                              )
+                              .toList(),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    );
+                  },
+                ),
+              ),
           ],
         ),
       ),
-
-      // ── Bottom Navigation ──
       bottomNavigationBar: BottomNavStudent(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -84,6 +143,28 @@ class _StudentBookingsScreenState extends State<StudentBookingsScreen> {
           }
         },
       ),
+    );
+  }
+
+  Widget _buildStatusSection({
+    required String title,
+    required List<BookingData> bookings,
+  }) {
+    if (bookings.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        ...bookings.map((booking) => BookingCardWidget(booking: booking)),
+        const SizedBox(height: 8),
+      ],
     );
   }
 }

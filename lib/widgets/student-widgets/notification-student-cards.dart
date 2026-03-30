@@ -1,39 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:tutophia/models/student-model/notification-student_data.dart';
+import 'package:tutophia/models/notification/app_notification.dart';
 
 // ── NotificationStudentCard ───────────────────────────────────────────────────
 
 class NotificationStudentCard extends StatelessWidget {
-  final StudentNotificationCardData data;
+  final AppNotification notification;
   final VoidCallback? onTap;
 
-  const NotificationStudentCard({super.key, required this.data, this.onTap});
+  const NotificationStudentCard({
+    super.key,
+    required this.notification,
+    this.onTap,
+  });
 
   _NotificationStyle get _style {
-    switch (data.type) {
-      case StudentNotificationType.bookingApproved:
+    switch (notification.type) {
+      case AppNotification.typeBookingApproved:
         return _NotificationStyle(
           icon: Icons.thumb_up_outlined,
           backgroundColor: const Color(0xFF3D6FA5),
         );
-      case StudentNotificationType.bookingDeclined:
+      case AppNotification.typeBookingDeclined:
         return _NotificationStyle(
           icon: Icons.thumb_down_outlined,
           backgroundColor: const Color(0xFF3D6FA5),
         );
-      case StudentNotificationType.sessionReminder:
+      case AppNotification.typeSessionReminder:
         return _NotificationStyle(
-          icon: Icons.error_outline_rounded,
+          icon: Icons.notifications_active_outlined,
           backgroundColor: const Color(0xFF3D6FA5),
         );
-      case StudentNotificationType.newMaterialsUploaded:
+      case AppNotification.typeNewBookingRequest:
+      case AppNotification.typeStudentCancelledBooking:
         return _NotificationStyle(
-          icon: Icons.upload_rounded,
+          icon: Icons.info_outline_rounded,
           backgroundColor: const Color(0xFF3D6FA5),
         );
-      case StudentNotificationType.feedbackReceived:
+      default:
         return _NotificationStyle(
-          icon: Icons.star_border_rounded,
+          icon: Icons.notifications_none_rounded,
           backgroundColor: const Color(0xFF3D6FA5),
         );
     }
@@ -42,6 +47,7 @@ class NotificationStudentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = _style;
+    final isRead = notification.isRead;
 
     return GestureDetector(
       onTap: onTap,
@@ -49,11 +55,14 @@ class NotificationStudentCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F0E8),
+          color: isRead ? const Color(0xFFF7F7F7) : const Color(0xFFF5F0E8),
           borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isRead ? const Color(0xFFE3E3E3) : const Color(0xFFD9C7AB),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -79,21 +88,23 @@ class NotificationStudentCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data.title,
-                    style: const TextStyle(
+                    notification.title,
+                    style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: isRead ? FontWeight.w600 : FontWeight.w700,
                       color: Color(0xFF1A1A2E),
                       height: 1.3,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    data.message,
-                    style: const TextStyle(
+                    notification.body,
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF555566),
+                      color: isRead
+                          ? const Color(0xFF7B7B8C)
+                          : const Color(0xFF555566),
                       height: 1.4,
                     ),
                   ),
@@ -119,8 +130,8 @@ class _NotificationStyle {
 // ── NotificationStudentList ───────────────────────────────────────────────────
 
 class NotificationStudentList extends StatelessWidget {
-  final List<StudentNotificationCardData> notifications;
-  final void Function(StudentNotificationCardData)? onCardTap;
+  final List<AppNotification> notifications;
+  final void Function(AppNotification)? onCardTap;
 
   const NotificationStudentList({
     super.key,
@@ -137,7 +148,7 @@ class NotificationStudentList extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = notifications[index];
         return NotificationStudentCard(
-          data: item,
+          notification: item,
           onTap: onCardTap != null ? () => onCardTap!(item) : null,
         );
       },

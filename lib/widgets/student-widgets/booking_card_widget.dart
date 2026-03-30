@@ -8,13 +8,20 @@ class BookingCardWidget extends StatelessWidget {
   const BookingCardWidget({super.key, required this.booking});
 
   Color _getStatusColor(String status) {
-    if (status == "APPROVED") {
+    if (status == BookingData.statusApproved) {
       return const Color(0xFF2ECC71);
-    } else if (status == "DECLINED") {
+    } else if (status == BookingData.statusCancelled) {
       return const Color(0xFFFF3B30);
+    } else if (status == BookingData.statusCompleted) {
+      return const Color(0xFF2A84D0);
     } else {
       return const Color(0xFF9EA3A8);
     }
+  }
+
+  String _statusLabel(String status) {
+    if (status.trim().isEmpty) return 'PENDING';
+    return status.toUpperCase();
   }
 
   @override
@@ -44,14 +51,14 @@ class BookingCardWidget extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.grey.shade600,
-              image: booking.imagePath.isNotEmpty
+              image: booking.tutorImagePath.isNotEmpty
                   ? DecorationImage(
-                      image: AssetImage(booking.imagePath),
+                      image: AssetImage(booking.tutorImagePath),
                       fit: BoxFit.cover,
                     )
                   : null,
             ),
-            child: booking.imagePath.isEmpty
+            child: booking.tutorImagePath.isEmpty
                 ? const Icon(Icons.person, size: 50, color: Colors.white)
                 : null,
           ),
@@ -69,7 +76,7 @@ class BookingCardWidget extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  booking.role,
+                  booking.tutorType,
                   style: const TextStyle(fontSize: 14, color: Colors.black87),
                 ),
                 const SizedBox(height: 8),
@@ -89,7 +96,7 @@ class BookingCardWidget extends StatelessWidget {
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: Text(
-                        booking.status,
+                        _statusLabel(booking.status),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,

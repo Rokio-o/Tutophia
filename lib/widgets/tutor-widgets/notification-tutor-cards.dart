@@ -1,34 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:tutophia/models/tutor-model/notification-tutor-data.dart';
+import 'package:tutophia/models/notification/app_notification.dart';
 
 // ── NotificationTutorCard ─────────────────────────────────────────────────────
 
 class NotificationTutorCard extends StatelessWidget {
-  final NotificationCardData data;
+  final AppNotification notification;
   final VoidCallback? onTap;
 
-  const NotificationTutorCard({super.key, required this.data, this.onTap});
+  const NotificationTutorCard({
+    super.key,
+    required this.notification,
+    this.onTap,
+  });
 
   _NotificationStyle get _style {
-    switch (data.type) {
-      case NotificationType.bookingRequest:
+    switch (notification.type) {
+      case AppNotification.typeNewBookingRequest:
         return _NotificationStyle(
           icon: Icons.help_outline_rounded,
           backgroundColor: const Color(0xff3d6fa5),
         );
-      case NotificationType.bookingCancellation:
+      case AppNotification.typeStudentCancelledBooking:
         return _NotificationStyle(
           icon: Icons.close_rounded,
           backgroundColor: const Color(0xff3d6fa5),
         );
-      case NotificationType.sessionReminder:
+      case AppNotification.typeSessionReminder:
+        return _NotificationStyle(
+          icon: Icons.notifications_active_outlined,
+          backgroundColor: const Color(0xff3d6fa5),
+        );
+      case AppNotification.typeBookingApproved:
+      case AppNotification.typeBookingDeclined:
         return _NotificationStyle(
           icon: Icons.info_outline_rounded,
           backgroundColor: const Color(0xff3d6fa5),
         );
-      case NotificationType.feedbackReceived:
+      default:
         return _NotificationStyle(
-          icon: Icons.star_border_rounded,
+          icon: Icons.notifications_none_rounded,
           backgroundColor: const Color(0xff3d6fa5),
         );
     }
@@ -37,6 +47,7 @@ class NotificationTutorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = _style;
+    final isRead = notification.isRead;
 
     return GestureDetector(
       onTap: onTap,
@@ -44,11 +55,14 @@ class NotificationTutorCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F0E8),
+          color: isRead ? const Color(0xFFF7F7F7) : const Color(0xFFF5F0E8),
           borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isRead ? const Color(0xFFE3E3E3) : const Color(0xFFD9C7AB),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -74,21 +88,23 @@ class NotificationTutorCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data.title,
-                    style: const TextStyle(
+                    notification.title,
+                    style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: isRead ? FontWeight.w600 : FontWeight.w700,
                       color: Color(0xFF1A1A2E),
                       height: 1.3,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    data.message,
-                    style: const TextStyle(
+                    notification.body,
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF555566),
+                      color: isRead
+                          ? const Color(0xFF7B7B8C)
+                          : const Color(0xFF555566),
                       height: 1.4,
                     ),
                   ),
@@ -114,8 +130,8 @@ class _NotificationStyle {
 // ── NotificationTutorList ─────────────────────────────────────────────────────
 
 class NotificationTutorList extends StatelessWidget {
-  final List<NotificationCardData> notifications;
-  final void Function(NotificationCardData)? onCardTap;
+  final List<AppNotification> notifications;
+  final void Function(AppNotification)? onCardTap;
 
   const NotificationTutorList({
     super.key,
@@ -132,7 +148,7 @@ class NotificationTutorList extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = notifications[index];
         return NotificationTutorCard(
-          data: item,
+          notification: item,
           onTap: onCardTap != null ? () => onCardTap!(item) : null,
         );
       },

@@ -1,13 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:tutophia/data/student-data/notification-student-repository.dart';
-import 'package:tutophia/models/student-model/notification-student_data.dart';
+import 'package:tutophia/StudentAccess/menu-my_booking.dart';
+import 'package:tutophia/models/notification/app_notification.dart';
+import 'package:tutophia/services/repository/notification_repository/notification_repository.dart';
 import 'package:tutophia/widgets/student-widgets/notification-student-cards.dart';
 import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
 import 'package:tutophia/StudentAccess/profile-student.dart';
 import 'package:tutophia/StudentAccess/dashboard-student.dart';
-
-// Global variable — persists across navigation
-bool hasNotification = true;
 
 class StudentNotificationsScreen extends StatefulWidget {
   const StudentNotificationsScreen({super.key});
@@ -20,18 +19,65 @@ class StudentNotificationsScreen extends StatefulWidget {
 class _StudentNotificationsScreenState
     extends State<StudentNotificationsScreen> {
   static const Color kNavy = Color(0xFF1A3A5C);
+  final NotificationRepository _notificationRepository =
+      NotificationRepository.instance;
 
-  List<StudentNotificationCardData> _notifications = List.from(
-    studentNotificationList,
-  );
+  @override
+  void initState() {
+    super.initState();
+    _ensureReminders();
+  }
+
+  Future<void> _ensureReminders() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    await _notificationRepository.ensureTodaySessionReminders(
+      uid: uid,
+      forTutor: false,
+    );
+  }
+
+  Future<void> _markAllAsRead() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    await _notificationRepository.markAllAsRead(uid);
+  }
+
+  Future<void> _onNotificationTap(AppNotification notification) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    if (!notification.isRead) {
+      await _notificationRepository.markAsRead(uid, notification.id);
+    }
+
+    if (!mounted) return;
+    _navigateByTarget(notification.targetScreen);
+  }
+
+  void _navigateByTarget(String targetScreen) {
+    if (targetScreen == AppNotification.targetStudentBookings) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const StudentBookingsScreen()),
+      );
+      return;
+    }
+
+    // TODO: Add additional target screen routes as more notification types are added.
+  }
 
   void _showClearConfirmation() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => ClearNotificationsDialog(
-        onYes: () {
+        onYes: () async {
           Navigator.of(context).pop();
+          await _markAllAsRead();
+          if (!mounted) return;
           _showClearedDialog();
         },
         onNo: () => Navigator.of(context).pop(),
@@ -46,10 +92,6 @@ class _StudentNotificationsScreenState
       builder: (_) => NotificationsClearedDialog(
         onOkay: () {
           Navigator.of(context).pop();
-          setState(() {
-            hasNotification = false;
-            _notifications = [];
-          });
         },
       ),
     );
@@ -57,6 +99,8 @@ class _StudentNotificationsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -97,57 +141,104 @@ class _StudentNotificationsScreenState
 
             // ── Scrollable notification list ──
             Expanded(
-              child: _notifications.isNotEmpty
-                  ? ListView.builder(
-                      itemCount: _notifications.length,
-                      itemBuilder: (context, index) {
-                        return NotificationStudentCard(
-                          data: _notifications[index],
-                          onTap: () {},
-                        );
-                      },
-                    )
-                  : const Center(
+              child: uid == null
+                  ? const Center(
                       child: Padding(
                         padding: EdgeInsets.only(top: 40),
                         child: Text(
-                          'No notifications',
+                          'Please log in to view notifications.',
                           style: TextStyle(color: Colors.grey, fontSize: 16),
                         ),
                       ),
-                    ),
-            ),
+                    )
+                  : StreamBuilder<List<AppNotification>>(
+                      stream: _notificationRepository.watchNotifications(uid),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
 
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  onPressed: _notifications.isNotEmpty
-                      ? _showClearConfirmation
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kNavy,
-                    disabledBackgroundColor: Colors.grey.shade400,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 14,
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Text(
+                                'Failed to load notifications: ${snapshot.error}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+                          );
+                        }
+
+                        final notifications =
+                            snapshot.data ?? const <AppNotification>[];
+
+                        if (notifications.isEmpty) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 40),
+                              child: Text(
+                                'No notifications',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        return Column(
+                          children: [
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: notifications.length,
+                                itemBuilder: (context, index) {
+                                  final item = notifications[index];
+                                  return NotificationStudentCard(
+                                    notification: item,
+                                    onTap: () => _onNotificationTap(item),
+                                  );
+                                },
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: ElevatedButton(
+                                    onPressed: notifications.isNotEmpty
+                                      ? _showClearConfirmation
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: kNavy,
+                                    disabledBackgroundColor: Colors.grey.shade400,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 28,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    elevation: 2,
+                                  ),
+                                  child: const Text(
+                                    'CLEAR ALL',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 2,
-                  ),
-                  child: const Text(
-                    'CLEAR ALL',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                ),
-              ),
             ),
           ],
         ),

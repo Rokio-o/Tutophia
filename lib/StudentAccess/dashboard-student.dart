@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 import 'package:tutophia/StudentAccess/menu-feedback.dart';
 import 'package:tutophia/StudentAccess/menu-find_tutors_student.dart';
 import 'package:tutophia/StudentAccess/session-materials.dart';
@@ -8,6 +9,7 @@ import 'package:tutophia/StudentAccess/notifications-student.dart';
 import 'package:tutophia/StudentAccess/profile-student.dart';
 import 'package:tutophia/StudentAccess/menu-my_booking.dart';
 import 'package:tutophia/services/repository/user_repository/user_repository.dart';
+import 'package:tutophia/data/student-data/booking_repository.dart';
 import 'package:tutophia/widgets/student-widgets/student-dashboard-card.dart';
 import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
 import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
@@ -23,6 +25,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
   int _selectedIndex = 0;
   String studentName = 'Student';
   String studentCourse = '';
+  StreamSubscription<int>? _pendingSub;
+  StreamSubscription<int>? _upcomingSub;
 
   // placeholder stats — replace with real data from backend
   int upcomingSessions = 0;
@@ -33,6 +37,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
   void initState() {
     super.initState();
     _loadDashboardProfile();
+    _bindBookingCounts();
+  }
+
+  @override
+  void dispose() {
+    _pendingSub?.cancel();
+    _upcomingSub?.cancel();
+    super.dispose();
   }
 
   String _asString(dynamic value) {
@@ -59,6 +71,25 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ? program
           : (university.isNotEmpty ? university : studentCourse);
     });
+  }
+
+  void _bindBookingCounts() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    _pendingSub = BookingRepository.instance
+        .watchStudentPendingCount(uid)
+        .listen((count) {
+          if (!mounted) return;
+          setState(() => pendingBookings = count);
+        });
+
+    _upcomingSub = BookingRepository.instance
+        .watchStudentUpcomingApprovedCount(uid)
+        .listen((count) {
+          if (!mounted) return;
+          setState(() => upcomingSessions = count);
+        });
   }
 
   @override

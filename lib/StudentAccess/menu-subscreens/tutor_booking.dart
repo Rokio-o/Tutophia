@@ -1,10 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:tutophia/data/student-data/booking_repository.dart';
 import 'package:tutophia/models/student-model/booking_data.dart';
 import 'package:tutophia/models/student-model/tutor_data.dart';
+import 'package:tutophia/services/repository/user_repository/user_repository.dart';
 import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
-import 'booking_confirmation.dart';
 
 class StudentTutorBookingScreen extends StatefulWidget {
   final TutorData tutor;
@@ -23,76 +24,178 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
   DateTime? _selectedDate;
   DateTime _focusedDay = DateTime.now();
 
-  String? _duration = '1 hour';
+  String? _duration = '60';
   String? _startTime = '7:00 am';
-  String? _endTime = '8:00 am';
   String? _subject;
   String? _mode = 'Face to Face';
 
-  final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _reasonController = TextEditingController();
+  bool _isSubmitting = false;
 
-  final List<String> durations = ['1 hour', '2 hours', '3 hours', '4 hours'];
+  final TextEditingController _topicController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
+
+  final List<String> durations = ['60', '120', '180', '240'];
   final List<String> times = [
     '7:00 am',
     '8:00 am',
     '9:00 am',
     '10:00 am',
+    '11:00 am',
+    '12:00 pm',
     '1:00 pm',
     '2:00 pm',
+    '3:00 pm',
+    '4:00 pm',
+    '5:00 pm',
+    '6:00 pm',
   ];
   final List<String> modes = ['Face to Face', 'Online', 'Hybrid'];
 
   @override
   void dispose() {
+    _topicController.dispose();
     _locationController.dispose();
-    _reasonController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
-  void _submitBooking() {
+  Future<void> _submitBooking() async {
+    if (_isSubmitting) return;
+
     if (_selectedDate == null ||
         _subject == null ||
-        _locationController.text.trim().isEmpty ||
-        _reasonController.text.trim().isEmpty) {
+        _topicController.text.trim().isEmpty ||
+        _notesController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please complete all required fields.')),
       );
       return;
     }
 
-    if (_startTime == _endTime) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login first.')),
+      );
+      return;
+    }
+
+    if (widget.tutor.uid.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Start time and end time cannot be the same.'),
+          content: Text(
+            'Tutor record is incomplete. Please refresh and try again.',
+          ),
         ),
       );
       return;
     }
 
-    final formattedDate =
-        "${_selectedDate!.month}/${_selectedDate!.day}/${_selectedDate!.year}";
+    final start = _buildSessionStart(_selectedDate!, _startTime!);
+    final durationMinutes = int.tryParse(_duration ?? '60') ?? 60;
+    final end = start.add(Duration(minutes: durationMinutes));
 
-    final newBooking = BookingData(
-      tutorName: widget.tutor.name,
-      role: widget.tutor.role,
-      status: "PENDING",
-      imagePath: widget.tutor.imagePath,
-      date: formattedDate,
-      time: "$_startTime to $_endTime",
-      duration: _duration ?? "1 hour",
-      mode: _mode ?? "Face to Face",
-      location: _locationController.text.trim(),
-      subjectTarget: _subject ?? "",
-      reason: _reasonController.text.trim(),
-    );
+    setState(() => _isSubmitting = true);
 
-    showConfirmBookingDialog(
-      context,
-      onConfirm: () {
-        activeBookings.add(newBooking);
-      },
+    try {
+      final hasConflict = await BookingRepository.instance.hasApprovedOverlap(
+        tutorId: widget.tutor.uid,
+        start: start,
+        end: end,
+      );
+
+      if (hasConflict) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'The tutor already has an approved session during this time. Please choose another slot.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      final studentProfile =
+          await UserRepository.instance.getUserProfile(uid) ?? <String, dynamic>{};
+      final studentName =
+          '${_asString(studentProfile['firstName'])} ${_asString(studentProfile['lastName'])}'
+              .trim();
+      final studentProgram = _asString(studentProfile['program']);
+
+      final hourlyRate = _parsePesoValue(widget.tutor.sessionRate);
+      final totalPrice = hourlyRate * (durationMinutes / 60.0);
+
+      final booking = BookingData(
+        bookingId: '',
+        studentId: uid,
+        studentName: studentName.isEmpty ? 'Student' : studentName,
+        studentProgram: studentProgram,
+        tutorId: widget.tutor.uid,
+        tutorName: widget.tutor.name,
+        tutorType: widget.tutor.role,
+        tutorImagePath: widget.tutor.imagePath,
+        subject: _subject ?? '',
+        topic: _topicController.text.trim(),
+        mode: _mode ?? 'Face to Face',
+        location: _locationController.text.trim(),
+        sessionDateTime: start,
+        endDateTime: end,
+        durationMinutes: durationMinutes,
+        hourlyRate: hourlyRate,
+        totalPrice: totalPrice,
+        studentNotes: _notesController.text.trim(),
+        status: BookingData.statusPending,
+      );
+
+      await BookingRepository.instance.createBooking(booking);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Booking request submitted.')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to submit booking: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  DateTime _buildSessionStart(DateTime selectedDate, String timeText) {
+    final text = timeText.trim().toLowerCase();
+    final timeParts = text.split(' ');
+    final hm = timeParts.first.split(':');
+    var hour = int.tryParse(hm[0]) ?? 0;
+    final minute = int.tryParse(hm.length > 1 ? hm[1] : '0') ?? 0;
+    final period = timeParts.length > 1 ? timeParts[1] : 'am';
+
+    if (period == 'pm' && hour != 12) hour += 12;
+    if (period == 'am' && hour == 12) hour = 0;
+
+    return DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      hour,
+      minute,
     );
+  }
+
+  String _asString(dynamic value) {
+    if (value is String) return value;
+    return '';
+  }
+
+  double _parsePesoValue(String input) {
+    final clean = input.replaceAll(RegExp(r'[^0-9.]'), '');
+    return double.tryParse(clean) ?? 0;
   }
 
   @override
@@ -114,14 +217,11 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Booking Header ──
             const HeaderStudentWdgt.booking(),
-
             const SizedBox(height: 20),
 
-            _buildLabel("Select a Date"),
+            _buildLabel('Select a Date'),
             const SizedBox(height: 5),
-
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -135,11 +235,7 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
                 selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
                 onDaySelected: (selectedDay, focusedDay) {
                   setState(() {
-                    if (isSameDay(_selectedDate, selectedDay)) {
-                      _selectedDate = null;
-                    } else {
-                      _selectedDate = selectedDay;
-                    }
+                    _selectedDate = selectedDay;
                     _focusedDay = focusedDay;
                   });
                 },
@@ -151,7 +247,7 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
                   outsideDaysVisible: false,
                   isTodayHighlighted: false,
                   selectedDecoration: BoxDecoration(
-                    color: Color(0XFF2A31AB),
+                    color: const Color(0XFF2A31AB),
                     shape: BoxShape.rectangle,
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -167,47 +263,32 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel("Duration"),
+                      _buildLabel('Duration'),
                       const SizedBox(height: 5),
                       _buildDropdown(
                         value: _duration,
                         items: durations,
                         onChanged: (val) => setState(() => _duration = val),
+                        formatItemText: (value) {
+                          final mins = int.tryParse(value) ?? 60;
+                          final hrs = mins ~/ 60;
+                          return hrs == 1 ? '1 hour' : '$hrs hours';
+                        },
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 15),
                 Expanded(
-                  flex: 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel("Time"),
+                      _buildLabel('Start Time'),
                       const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDropdown(
-                              value: _startTime,
-                              items: times,
-                              onChanged: (val) =>
-                                  setState(() => _startTime = val),
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8),
-                            child: Text("-"),
-                          ),
-                          Expanded(
-                            child: _buildDropdown(
-                              value: _endTime,
-                              items: times,
-                              onChanged: (val) =>
-                                  setState(() => _endTime = val),
-                            ),
-                          ),
-                        ],
+                      _buildDropdown(
+                        value: _startTime,
+                        items: times,
+                        onChanged: (val) => setState(() => _startTime = val),
                       ),
                     ],
                   ),
@@ -223,11 +304,11 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel("Subject"),
+                      _buildLabel('Subject'),
                       const SizedBox(height: 5),
                       _buildDropdown(
                         value: _subject,
-                        hint: "Select a Subject",
+                        hint: 'Select a Subject',
                         items: subjects,
                         onChanged: (val) => setState(() => _subject = val),
                       ),
@@ -239,7 +320,7 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel("Mode"),
+                      _buildLabel('Mode'),
                       const SizedBox(height: 5),
                       _buildDropdown(
                         value: _mode,
@@ -254,20 +335,29 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
 
             const SizedBox(height: 20),
 
-            _buildLabel("Location"),
+            _buildLabel('Topic'),
             const SizedBox(height: 5),
             _buildExpandableTextField(
-              controller: _locationController,
-              hint: "Enter location...",
+              controller: _topicController,
+              hint: 'Enter topic...',
             ),
 
             const SizedBox(height: 20),
 
-            _buildLabel("Reason"),
+            _buildLabel('Location (optional)'),
             const SizedBox(height: 5),
             _buildExpandableTextField(
-              controller: _reasonController,
-              hint: "Enter reason...",
+              controller: _locationController,
+              hint: 'Enter location...',
+            ),
+
+            const SizedBox(height: 20),
+
+            _buildLabel('Notes'),
+            const SizedBox(height: 5),
+            _buildExpandableTextField(
+              controller: _notesController,
+              hint: 'Enter notes for the tutor...',
             ),
 
             const SizedBox(height: 40),
@@ -277,7 +367,7 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
                 width: 150,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _submitBooking,
+                  onPressed: _isSubmitting ? null : _submitBooking,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryOrange,
                     shape: RoundedRectangleBorder(
@@ -285,14 +375,23 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    "Submit",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Submit',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -304,7 +403,6 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
     );
   }
 
-  // Required label with red asterisk.
   Widget _buildLabel(String text) {
     return RichText(
       text: TextSpan(
@@ -314,22 +412,24 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
-        children: const [
-          TextSpan(
-            text: " *",
-            style: TextStyle(color: Colors.red),
-          ),
-        ],
+        children: text.contains('(optional)')
+            ? const []
+            : const [
+                TextSpan(
+                  text: ' *',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ],
       ),
     );
   }
 
-  // Styled dropdown for booking form.
   Widget _buildDropdown({
     required String? value,
     String? hint,
     required List<String> items,
     required void Function(String?) onChanged,
+    String Function(String value)? formatItemText,
   }) {
     return Container(
       height: 40,
@@ -352,14 +452,16 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
           style: const TextStyle(color: Colors.black87, fontSize: 13),
           onChanged: onChanged,
           items: items.map((item) {
-            return DropdownMenuItem<String>(value: item, child: Text(item));
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(formatItemText?.call(item) ?? item),
+            );
           }).toList(),
         ),
       ),
     );
   }
 
-  // Expandable text field for location and reason.
   Widget _buildExpandableTextField({
     required TextEditingController controller,
     required String hint,
