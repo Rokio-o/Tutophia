@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
 
 class FilterButton extends StatelessWidget {
-  final int filterRating;
+  static const List<String> _tutorTypeOptions = [
+    'Student Tutor',
+    'Graduate Tutor',
+    'Professional Tutor',
+    'Expert Tutor',
+  ];
+
   final TextEditingController minRateCtrl;
   final TextEditingController maxRateCtrl;
-  final TextEditingController subjectCtrl;
-  final TextEditingController locationCtrl;
-  final ValueChanged<int> onRatingChanged;
+  final TextEditingController tutorTypeCtrl;
+  final TextEditingController specializationCtrl;
+  final TextEditingController programCtrl;
   final VoidCallback onApply;
   final VoidCallback onCancel;
 
   const FilterButton({
     super.key,
-    required this.filterRating,
     required this.minRateCtrl,
     required this.maxRateCtrl,
-    required this.subjectCtrl,
-    required this.locationCtrl,
-    required this.onRatingChanged,
+    required this.tutorTypeCtrl,
+    required this.specializationCtrl,
+    required this.programCtrl,
     required this.onApply,
     required this.onCancel,
   });
@@ -46,33 +51,6 @@ class FilterButton extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            const Text("Rating:", style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 5),
-
-            Row(
-              children: [
-                ...List.generate(5, (index) {
-                  return GestureDetector(
-                    onTap: () => onRatingChanged(index + 1),
-                    child: Icon(
-                      Icons.star,
-                      color: index < filterRating
-                          ? Colors.yellow
-                          : Colors.grey[300],
-                      size: 32,
-                    ),
-                  );
-                }),
-                const SizedBox(width: 10),
-                Text(
-                  "$filterRating stars",
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 15),
 
             const Text("Session Rate:", style: TextStyle(fontSize: 16)),
             const SizedBox(height: 5),
@@ -141,15 +119,44 @@ class FilterButton extends StatelessWidget {
 
             const SizedBox(height: 15),
 
-            const Text("Subject:", style: TextStyle(fontSize: 16)),
+            const Text("Tutor Type:", style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 5),
+
+            DropdownButtonFormField<String>(
+              value: _tutorTypeOptions.contains(tutorTypeCtrl.text)
+                  ? tutorTypeCtrl.text
+                  : null,
+              decoration: InputDecoration(
+                hintText: "Select tutor type",
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              items: _tutorTypeOptions
+                  .map(
+                    (type) => DropdownMenuItem<String>(
+                      value: type,
+                      child: Text(type),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                tutorTypeCtrl.text = value ?? '';
+              },
+            ),
+
+            const SizedBox(height: 15),
+
+            const Text("Specialization:", style: TextStyle(fontSize: 16)),
             const SizedBox(height: 5),
 
             SizedBox(
               height: 40,
               child: TextField(
-                controller: subjectCtrl,
+                controller: specializationCtrl,
                 decoration: InputDecoration(
-                  hintText: "Text...",
+                  hintText: "e.g., Calculus, Physics",
                   contentPadding: const EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -160,15 +167,15 @@ class FilterButton extends StatelessWidget {
 
             const SizedBox(height: 15),
 
-            const Text("Location:", style: TextStyle(fontSize: 16)),
+            const Text("Program:", style: TextStyle(fontSize: 16)),
             const SizedBox(height: 5),
 
             SizedBox(
               height: 40,
               child: TextField(
-                controller: locationCtrl,
+                controller: programCtrl,
                 decoration: InputDecoration(
-                  hintText: "Text...",
+                  hintText: "e.g., Computer Science",
                   contentPadding: const EdgeInsets.symmetric(horizontal: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),

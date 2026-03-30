@@ -21,6 +21,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isPasswordVisible = false;
   bool isLoggingIn = false;
 
+  bool _isValidEmail(String email) {
+    return RegExp(
+      r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$',
+    ).hasMatch(email);
+  }
+
   @override
   void dispose() {
     emailController.dispose();
@@ -38,6 +44,16 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter your email and password.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (!_isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid email address.'),
           backgroundColor: Colors.red,
         ),
       );

@@ -21,7 +21,7 @@ class UserRepository extends GetxController {
     final sanitizedData = <String, dynamic>{
       ...profileData,
       'email': email,
-      'role': role,
+      'accountType': role,
       'uid': uid,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -68,7 +68,7 @@ class UserRepository extends GetxController {
     if (!doc.exists) return null;
 
     final data = doc.data();
-    final role = data?['role'];
+    final role = data?['accountType'];
     if (role is String && role.trim().isNotEmpty) {
       return role.trim().toLowerCase();
     }

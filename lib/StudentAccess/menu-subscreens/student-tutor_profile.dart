@@ -112,7 +112,9 @@ class StudentTutorProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    tutor.subjects.join(", "),
+                    tutor.subjects.isEmpty
+                        ? "No specialization provided yet"
+                        : tutor.subjects.join(", "),
                     style: const TextStyle(fontSize: 14, color: Colors.black87),
                     textAlign: TextAlign.center,
                   ),

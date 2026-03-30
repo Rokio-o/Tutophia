@@ -19,11 +19,11 @@ class _FindTutorsState extends State<FindTutors> {
   int _selectedIndex = 0;
 
   // Variables for filter criteria
-  int _filterRating = 5;
   final TextEditingController _minRateCtrl = TextEditingController();
   final TextEditingController _maxRateCtrl = TextEditingController();
-  final TextEditingController _subjectCtrl = TextEditingController();
-  final TextEditingController _locationCtrl = TextEditingController();
+  final TextEditingController _tutorTypeCtrl = TextEditingController();
+  final TextEditingController _specializationCtrl = TextEditingController();
+  final TextEditingController _programCtrl = TextEditingController();
 
   // Search state
   final TextEditingController _searchCtrl = TextEditingController();
@@ -31,45 +31,69 @@ class _FindTutorsState extends State<FindTutors> {
   // Displayed list of tutors after filtering and searching
   List<TutorData> _filteredTutors = [];
 
+  // All tutors fetched from Firestore
+  List<TutorData> _allTutors = [];
+
+  // Loading and error states
+  bool _isLoading = true;
+  String? _errorMessage;
+
   // Shows or hides the Clear Filter button
   bool _hasActiveFilter = false;
 
   @override
   void initState() {
     super.initState();
-    _filteredTutors = availableTutors;
+    _loadTutors();
+  }
+
+  /// Fetch tutors from Firestore
+  Future<void> _loadTutors() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      final tutors = await fetchAllTutors();
+      
+      setState(() {
+        _allTutors = tutors;
+        _filteredTutors = tutors;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Failed to load tutors. Please try again.';
+        // Fallback to mock data on error
+        _allTutors = availableTutors;
+        _filteredTutors = availableTutors;
+      });
+      print('Error loading tutors: $e');
+    }
   }
 
   @override
   void dispose() {
     _minRateCtrl.dispose();
     _maxRateCtrl.dispose();
-    _subjectCtrl.dispose();
-    _locationCtrl.dispose();
+    _tutorTypeCtrl.dispose();
+    _specializationCtrl.dispose();
+    _programCtrl.dispose();
     _searchCtrl.dispose();
     super.dispose();
   }
 
   void _applyFilter() {
     setState(() {
-      _filteredTutors = availableTutors.where((tutor) {
+      _filteredTutors = _allTutors.where((tutor) {
         final searchQuery = _searchCtrl.text.trim().toLowerCase();
         final matchesSearch =
             searchQuery.isEmpty ||
             tutor.name.toLowerCase().contains(searchQuery) ||
-            tutor.subjects.any((s) => s.toLowerCase().contains(searchQuery));
-
-        final tutorRating = double.tryParse(tutor.rating) ?? 0.0;
-        final matchesRating = tutorRating >= (_filterRating - 1);
-
-        final locQuery = _locationCtrl.text.trim().toLowerCase();
-        final matchesLocation =
-            locQuery.isEmpty || tutor.location.toLowerCase().contains(locQuery);
-
-        final subQuery = _subjectCtrl.text.trim().toLowerCase();
-        final matchesSubject =
-            subQuery.isEmpty ||
-            tutor.subjects.any((s) => s.toLowerCase().contains(subQuery));
+            tutor.subjects.any((s) => s.toLowerCase().contains(searchQuery)) ||
+            tutor.program.toLowerCase().contains(searchQuery);
 
         final priceStr = tutor.sessionRate.replaceAll(RegExp(r'[^0-9]'), '');
         final price = double.tryParse(priceStr) ?? 0.0;
@@ -77,31 +101,50 @@ class _FindTutorsState extends State<FindTutors> {
         final maxPrice = double.tryParse(_maxRateCtrl.text) ?? double.infinity;
         final matchesPrice = price >= minPrice && price <= maxPrice;
 
+        final tutorTypeQuery = _tutorTypeCtrl.text.trim().toLowerCase();
+        final matchesTutorType =
+            tutorTypeQuery.isEmpty ||
+            tutor.role.toLowerCase().contains(tutorTypeQuery);
+
+        final specializationQuery = _specializationCtrl.text
+          .trim()
+          .toLowerCase();
+        final matchesSpecialization =
+          specializationQuery.isEmpty ||
+          tutor.subjects.any(
+            (s) => s.toLowerCase().contains(specializationQuery),
+          );
+
+        final programQuery = _programCtrl.text.trim().toLowerCase();
+        final matchesProgram =
+          programQuery.isEmpty ||
+          tutor.program.toLowerCase().contains(programQuery);
+
         return matchesSearch &&
-            matchesRating &&
-            matchesLocation &&
             matchesPrice &&
-            matchesSubject;
+            matchesTutorType &&
+          matchesSpecialization &&
+          matchesProgram;
       }).toList();
 
       // Determines if at least one filter is currently active
       _hasActiveFilter =
-          _filterRating != 5 ||
           _minRateCtrl.text.trim().isNotEmpty ||
           _maxRateCtrl.text.trim().isNotEmpty ||
-          _subjectCtrl.text.trim().isNotEmpty ||
-          _locationCtrl.text.trim().isNotEmpty;
+          _tutorTypeCtrl.text.trim().isNotEmpty ||
+          _specializationCtrl.text.trim().isNotEmpty ||
+          _programCtrl.text.trim().isNotEmpty;
     });
   }
 
   void _clearFilters() {
     setState(() {
-      _filterRating = 5;
       _minRateCtrl.clear();
       _maxRateCtrl.clear();
-      _subjectCtrl.clear();
-      _locationCtrl.clear();
-      _filteredTutors = availableTutors;
+      _tutorTypeCtrl.clear();
+      _specializationCtrl.clear();
+      _programCtrl.clear();
+      _filteredTutors = _allTutors;
       _hasActiveFilter = false;
     });
   }
@@ -119,16 +162,11 @@ class _FindTutorsState extends State<FindTutors> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return FilterButton(
-              filterRating: _filterRating,
               minRateCtrl: _minRateCtrl,
               maxRateCtrl: _maxRateCtrl,
-              subjectCtrl: _subjectCtrl,
-              locationCtrl: _locationCtrl,
-              onRatingChanged: (value) {
-                setModalState(() {
-                  _filterRating = value;
-                });
-              },
+              tutorTypeCtrl: _tutorTypeCtrl,
+              specializationCtrl: _specializationCtrl,
+              programCtrl: _programCtrl,
               onCancel: () => Navigator.pop(context),
               onApply: () {
                 _applyFilter();
@@ -237,19 +275,55 @@ class _FindTutorsState extends State<FindTutors> {
               const Divider(color: Colors.black87, thickness: 1),
 
               Expanded(
-                child: _filteredTutors.isEmpty
-                    ? const Center(child: Text("No match."))
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: _filteredTutors.length,
-                        itemBuilder: (context, index) {
-                          final tutor = _filteredTutors[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 20.0),
-                            child: TutorCardWidget(tutor: tutor),
-                          );
-                        },
-                      ),
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xff3d6fa5),
+                        ),
+                      )
+                    : _errorMessage != null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.error_outline,
+                                    color: Colors.red, size: 48),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _errorMessage ?? 'An error occurred',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  onPressed: _loadTutors,
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('Try Again'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xff3d6fa5),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : _filteredTutors.isEmpty
+                            ? const Center(child: Text("No match."))
+                            : ListView.builder(
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: _filteredTutors.length,
+                                itemBuilder: (context, index) {
+                                  final tutor = _filteredTutors[index];
+                                  return Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 20.0),
+                                    child: TutorCardWidget(tutor: tutor),
+                                  );
+                                },
+                              ),
               ),
             ],
           ),

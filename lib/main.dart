@@ -2,17 +2,22 @@
 
 import 'package:flutter/material.dart';
 import 'splashScreen.dart';
-import 'login.dart';
-import 'TutorAccess/dashboard-tutor.dart';
-import 'StudentAccess/dashboard-student.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'services/notifications/notification_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  final notificationService = NotificationService();
+  await notificationService.initFCM();
+
+  FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
+
   runApp(TutophiaApp());
 }
 
@@ -26,4 +31,9 @@ class TutophiaApp extends StatelessWidget {
       home: SplashScreen(),
     );
   }
+}
+
+
+Future<void> handleBackgroundMessage(RemoteMessage message) async {
+  print('Message: ${message.notification?.title}');
 }

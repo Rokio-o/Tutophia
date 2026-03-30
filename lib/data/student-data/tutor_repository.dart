@@ -1,57 +1,151 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tutophia/models/student-model/tutor_data.dart';
 
-// Temporary tutor data.
-// Replace this later with database or backend data.
+// Firestore instance
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+// Temporary tutor data - Used as fallback/mock data
 final List<TutorData> availableTutors = [
-  const TutorData(
-    name: "Jeancess Gallo",
-    role: "Student Tutor",
-    location: "Montalban Rizal",
-    sessionRate: "₱60 /hr",
-    rating: "4.8",
-    reviews: "(20 reviews)",
-    subjects: ["Linear Algebra", "Calculus 1", "UI/UX"],
-    imagePath: "assets/images/placeholder_profile.jpg",
-    description:
-        "3rd year Computer Science student with 2 years of experience tutoring Linear Algebra, Calculus 1, and UI/UX. I explain concepts clearly using simple, step-by-step examples.",
-    department: "College of Computer Studies",
-    program: "Computer Science",
-    yearLevel: "3rd Year",
-    tutoringExperience: "2 Years",
-    mode: "Hybrid",
-    sessionDuration: "2 hours",
-    email: "qjsgallo@gmail.com",
-    contactNumber: "09123487634",
-    messenger: "JeancessGallo/messenger.com",
-    instagram: "Cess/instagram.com",
-    others: "Rokio/github.com",
-    availableSchedule: [
-      "Wednesday • 8:30 am to 10:30 am",
-      "Wednesday • 5:00 pm to 7:00 pm",
-    ],
-  ),
-  const TutorData(
-    name: "Eric De Leon",
-    role: "Student Tutor",
-    location: "Montalban Rizal",
-    sessionRate: "₱60 /hr",
-    rating: "4.8",
-    reviews: "(20 reviews)",
-    subjects: ["Linear Algebra", "Calculus 1", "UI/UX"],
-    imagePath: "",
-    description:
-        "A student tutor who explains lessons in a clear and simple way.",
-    department: "College of Computer Studies",
-    program: "Computer Science",
-    yearLevel: "3rd Year",
-    tutoringExperience: "2 Years",
-    mode: "Hybrid",
-    sessionDuration: "2 hours",
-    email: "eric@example.com",
-    contactNumber: "09123456789",
-    messenger: "Eric/messenger.com",
-    instagram: "Eric/instagram.com",
-    others: "Eric/github.com",
-    availableSchedule: ["Friday • 1:00 pm to 3:00 pm"],
-  ),
+  
 ];
+
+/// Fetches all tutors from Firestore (Users collection where role = 'tutor')
+Future<List<TutorData>> fetchAllTutors() async {
+  try {
+    final QuerySnapshot querySnapshot = await _firestore
+        .collection('Users')
+        .where('accountType', isEqualTo: 'tutor')
+        .get();
+
+    final List<TutorData> tutors = querySnapshot.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+
+      // Combine firstName and lastName into name
+      final firstName = data['firstName'] as String? ?? '';
+      final lastName = data['lastName'] as String? ?? '';
+      final fullName = '${firstName.trim()} ${lastName.trim()}'.trim();
+
+      // Parse rating and reviews
+      final ratingValue = data['rating'] ?? 0;
+      final rating = ratingValue is num ? ratingValue.toString() : '0';
+      
+      final reviewCount = data['reviewCount'] ?? 0;
+      final reviews = reviewCount is num ? '($reviewCount reviews)' : '(0 reviews)';
+
+      // Parse session rate - ensure it includes ₱ symbol
+      var sessionRate = data['sessionRate'] as String? ?? '₱0 /hr';
+      if (!sessionRate.contains('₱')) {
+        sessionRate = '₱$sessionRate /hr';
+      }
+
+        // Accept both legacy key `specialization` and current key `specializations`.
+        final subjects = _toStringList(
+          data['specializations'] ?? data['specialization'],
+        );
+
+        // Accept either a Firestore array or a single string value.
+        final availableSchedule = _toStringList(data['availableSchedule']);
+
+      return TutorData(
+        name: fullName,
+        role: data['tutorType'] as String? ?? 'Student Tutor',
+        location: data['address'] as String? ?? 'Not specified',
+        sessionRate: sessionRate,
+        rating: rating,
+        reviews: reviews,
+        subjects: subjects,
+        imagePath: data['profileImagePath'] as String? ?? '',
+        description:
+            data['teachingDescription'] as String? ??
+            data['description'] as String? ??
+            '',
+        department: data['department'] as String? ?? '',
+        program: data['program'] as String? ?? '',
+        yearLevel: data['yearSpent'] as String? ?? '',
+        tutoringExperience: data['tutoringExperience'] as String? ?? '',
+        mode: _getModeString(data),
+        sessionDuration:
+            data['sessionDurationHours'] as String? ??
+            data['sessionDuration'] as String? ??
+            '',
+        email: data['email'] as String? ?? '',
+        contactNumber: data['contactNumber'] as String? ?? '',
+        messenger: data['messenger'] as String? ?? '',
+        instagram: data['instagram'] as String? ?? '',
+        others: data['otherAccounts'] as String? ?? data['others'] as String? ?? '',
+        availableSchedule: availableSchedule,
+      );
+    }).toList();
+
+    return tutors;
+  } catch (e) {
+    print('Error fetching tutors from Firestore: $e');
+    // Return mock data as fallback
+    return availableTutors;
+  }
+}
+
+/// Helper function to construct mode string from boolean fields
+String _getModeString(Map<String, dynamic> data) {
+  final modesFromList = _toStringList(data['modeOfTutoring']);
+  if (modesFromList.isNotEmpty) {
+    return modesFromList
+        .map((mode) {
+          switch (mode.trim().toLowerCase()) {
+            case 'online':
+              return 'Online';
+            case 'face_to_face':
+              return 'Face-to-Face';
+            case 'hybrid':
+              return 'Hybrid';
+            default:
+              return mode;
+          }
+        })
+        .join(', ');
+  }
+
+  final List<String> modes = [];
+  
+  if (data['isOnlineSelected'] == true) modes.add('Online');
+  if (data['isFaceToFaceSelected'] == true) modes.add('Face-to-Face');
+  if (data['isHybridSelected'] == true) modes.add('Hybrid');
+  
+  return modes.isNotEmpty ? modes.join(', ') : 'Not specified';
+}
+
+List<String> _toStringList(dynamic value) {
+  if (value == null) return <String>[];
+
+  if (value is List) {
+    return value
+        .map((item) => item.toString().trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  if (value is String) {
+    final normalized = value.trim();
+    if (normalized.isEmpty) return <String>[];
+
+    if (normalized.contains(',')) {
+      return normalized
+          .split(',')
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList();
+    }
+
+    if (normalized.contains('\n')) {
+      return normalized
+          .split('\n')
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList();
+    }
+
+    return <String>[normalized];
+  }
+
+  return <String>[value.toString()];
+}
