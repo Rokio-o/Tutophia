@@ -1,10 +1,8 @@
 // entry point for tutophia application
 
 import 'package:flutter/material.dart';
-import 'splashScreen.dart';
-import 'login.dart';
-import 'TutorAccess/dashboard-tutor.dart';
-import 'StudentAccess/dashboard-student.dart';
+import 'package:tutophia/login.dart';
+import 'onboardingScreen.dart';
 
 void main() {
   runApp(TutophiaApp());
@@ -16,8 +14,7 @@ class TutophiaApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tutophia',
-      // put specific screen to run (StudentDashboard / TutorDashboard / login / splashScreen)
-      home: StudentDashboard(),
+      home: OnboardingScreen(),
     );
   }
 }

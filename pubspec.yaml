@@ -76,6 +76,8 @@ flutter:
     - assets/images/tutor.png
     - assets/images/student.png
     - assets/images/forgot-pass-illustration.png
+    - assets/images/onboard1-pic.png
+    - assets/images/onboard2-pic.png
     - assets/icons/home_icon.png
     - assets/icons/notification_icon.png
     - assets/icons/profile_icon.png
