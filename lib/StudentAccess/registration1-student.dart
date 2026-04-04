@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:tutophia/login.dart';
 import 'package:tutophia/StudentAccess/registration2-student.dart';
 import 'package:tutophia/registration-type.dart';
+import 'package:tutophia/services/authentication/auth_registration_validator.dart';
 
 class StudentRegistration1 extends StatefulWidget {
   const StudentRegistration1({super.key});
@@ -153,6 +154,7 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey.shade400),
         suffixIcon: suffix,
+        errorMaxLines: 2,
         filled: true,
         fillColor: Colors.white,
         contentPadding:
@@ -259,12 +261,7 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
   }
 
   String? validateEmail(String? v) {
-    if (v == null || v.isEmpty) return 'Email address is required';
-    if (!RegExp(
-      r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+(\.[a-zA-Z]+)?$',
-    ).hasMatch(v))
-      return 'Please enter a valid email address';
-    return null;
+    return AuthRegistrationValidator.validateRegistrationEmail(v);
   }
 
   String? validateUsername(String? v) {
@@ -294,9 +291,7 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
   }
 
   String? validateAge() {
-    if (age == null) return 'Age is required';
-    if (age! < 15 || age! > 100) return 'Age must be between 15 and 100';
-    return null;
+    return AuthRegistrationValidator.validateStudentAge(age);
   }
 
   // ── Build ────────────────────────────────────────────────────────────────────
@@ -645,9 +640,9 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
               _section('Account Creation'),
 
               _field(
-                'Email Address',
+                'School/Institution Email Address',
                 emailController,
-                'Enter your email address',
+                'Enter your school email address',
                 validator: validateEmail,
                 keyboardType: TextInputType.emailAddress,
               ),

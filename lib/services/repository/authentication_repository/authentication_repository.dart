@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:tutophia/services/authentication/auth_registration_validator.dart';
 import 'package:tutophia/services/repository/authentication_repository/exceptions/signup_email_password_failure.dart';
 import 'package:tutophia/services/repository/user_repository/user_repository.dart';
 
@@ -20,9 +22,26 @@ class AuthenticationRepository extends GetxController {
     required String role,
     required Map<String, dynamic> profileData,
   }) async {
+    final normalizedEmail = AuthRegistrationValidator.normalizeEmail(email);
+
+    final emailValidationError =
+        AuthRegistrationValidator.validateRegistrationEmail(normalizedEmail);
+    if (emailValidationError != null) {
+      throw SignUpWithEmailAndPasswordFailure(emailValidationError);
+    }
+
+    if (role.trim().toLowerCase() == 'student') {
+      final studentAgeError = AuthRegistrationValidator.validateStudentAge(
+        profileData['age'],
+      );
+      if (studentAgeError != null) {
+        throw SignUpWithEmailAndPasswordFailure(studentAgeError);
+      }
+    }
+
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
+        email: normalizedEmail,
         password: password,
       );
 
@@ -35,7 +54,7 @@ class AuthenticationRepository extends GetxController {
 
       await UserRepository.instance.createUser(
         uid: user.uid,
-        email: email,
+        email: normalizedEmail,
         role: role,
         profileData: profileData,
       );
@@ -43,7 +62,7 @@ class AuthenticationRepository extends GetxController {
       return credential;
     } on FirebaseAuthException catch (e) {
       final ex = SignUpWithEmailAndPasswordFailure.code(e.code);
-      print('FIREBASE AUTH EXCEPTION - ${ex.message}');
+      debugPrint('FIREBASE AUTH EXCEPTION - ${ex.message}');
       throw ex;
     }
   }
@@ -54,14 +73,39 @@ class AuthenticationRepository extends GetxController {
   ) async {
     try {
       return await _auth.signInWithEmailAndPassword(
-        email: email,
+        email: AuthRegistrationValidator.normalizeEmail(email),
         password: password,
       );
     } on FirebaseAuthException catch (e) {
       final ex = SignUpWithEmailAndPasswordFailure.code(e.code);
-      print('EXCEPTION - ${ex.message}');
+      debugPrint('EXCEPTION - ${ex.message}');
       throw ex;
     }
+  }
+
+  Future<void> sendEmailVerification({User? user}) async {
+    try {
+      final activeUser = user ?? _auth.currentUser;
+      if (activeUser == null) {
+        throw const SignUpWithEmailAndPasswordFailure(
+          'No signed-in user found. Please log in again.',
+        );
+      }
+
+      if (!activeUser.emailVerified) {
+        await activeUser.sendEmailVerification();
+      }
+    } on FirebaseAuthException catch (e) {
+      final ex = SignUpWithEmailAndPasswordFailure.code(e.code);
+      debugPrint('EMAIL VERIFICATION ERROR - ${ex.message}');
+      throw ex;
+    }
+  }
+
+  Future<User?> reloadCurrentUser() async {
+    final user = _auth.currentUser;
+    await user?.reload();
+    return _auth.currentUser;
   }
 
   Future<void> signOut() async {

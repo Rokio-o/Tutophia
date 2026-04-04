@@ -47,6 +47,11 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     return _asString(value);
   }
 
+  String _displayValue(String value) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? 'Not provided' : trimmed;
+  }
+
   Future<void> _loadProfileFromFirestore() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -107,9 +112,12 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       profile.schedule = _asString(data['availableSchedule']).isNotEmpty
           ? _asString(data['availableSchedule'])
           : profile.schedule;
-      profile.linkSchedule = _asString(data['scheduleLink']).isNotEmpty
-          ? _asString(data['scheduleLink'])
-          : profile.linkSchedule;
+        final portfolioLink = _asString(data['portfolioLink']).isNotEmpty
+          ? _asString(data['portfolioLink'])
+          : _asString(data['scheduleLink']);
+        profile.portfolioLink = portfolioLink.isNotEmpty
+          ? portfolioLink
+          : profile.portfolioLink;
       profile.email = _asString(data['email']).isNotEmpty
           ? _asString(data['email'])
           : profile.email;
@@ -689,10 +697,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     );
   }
 
-  // ---------- EDIT LINK SCHEDULE ----------
-  void editLinkSchedule() {
-    TextEditingController linkScheduleC = TextEditingController(
-      text: profile.linkSchedule,
+  // ---------- EDIT PORTFOLIO LINK ----------
+  void editPortfolioLink() {
+    TextEditingController portfolioLinkC = TextEditingController(
+      text: profile.portfolioLink,
     );
 
     showDialog(
@@ -708,16 +716,18 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
         ),
         content: SingleChildScrollView(
           child: Column(
-            children: [buildBox(linkScheduleC, "Link for Documented Schedule")],
+            children: [
+              buildBox(portfolioLinkC, "Portfolio or Tutoring Evidence Link"),
+            ],
           ),
         ),
         actions: [
           _dialogActions(() async {
             setState(() {
-              profile.linkSchedule = linkScheduleC.text;
+              profile.portfolioLink = portfolioLinkC.text;
             });
             Navigator.pop(context);
-            await _saveProfileChanges({'scheduleLink': profile.linkSchedule});
+            await _saveProfileChanges({'portfolioLink': profile.portfolioLink});
           }),
         ],
       ),
@@ -891,7 +901,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
             // AVAILABLE SCHEDULE
             sectionCard("Available Schedule", profile.schedule, editSchedule),
 
-            // LINK FOR DOCUMENTED SCHEDULE
+            // PORTFOLIO / TUTORING EVIDENCE LINK
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Column(
@@ -901,7 +911,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        "Link for Documented Schedule",
+                        "Portfolio or Tutoring Evidence Link",
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -910,7 +920,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.edit, size: 18),
-                        onPressed: () => editLinkSchedule(),
+                        onPressed: () => editPortfolioLink(),
                       ),
                     ],
                   ),
@@ -927,7 +937,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                       border: Border.all(color: Colors.black54),
                     ),
                     child: Text(
-                      profile.linkSchedule,
+                      _displayValue(profile.portfolioLink),
                       style: const TextStyle(
                         fontSize: 14,
                         color: Colors.black87,
@@ -946,7 +956,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
             // CONTACT INFORMATION
             sectionCard(
               "Contact Information",
-              "Email: ${profile.email}\nPhone: ${profile.phone}\nMessenger: ${profile.messenger}\nInstagram: ${profile.instagram}\nOthers: ${profile.others}",
+              "Email: ${_displayValue(profile.email)}\nPhone: ${_displayValue(profile.phone)}\nMessenger: ${_displayValue(profile.messenger)}\nInstagram: ${_displayValue(profile.instagram)}\nOthers: ${_displayValue(profile.others)}",
               editContact,
             ),
 

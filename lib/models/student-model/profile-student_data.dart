@@ -28,8 +28,8 @@ class StudentProfileModel {
     this.department = "College of Computer Studies",
     this.email = "wdelomos@tip.edu.ph",
     this.phone = "+63 928 323 958",
-    this.messenger = "Wenf.DeLemos",
-    this.instagram = "devWenf",
-    this.others = "weni12/linkedin.com",
+    this.messenger = '',
+    this.instagram = '',
+    this.others = '',
   });
 }

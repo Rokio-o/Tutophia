@@ -1,1 +1,64 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"tutophia-firebase","appId":"1:338174668418:android:3bb750e1e04066fa884e9b","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"tutophia-firebase","configurations":{"android":"1:338174668418:android:3bb750e1e04066fa884e9b","ios":"1:338174668418:ios:f2be404861bf6b10884e9b"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "tutophia-firebase",
+          "appId": "1:338174668418:android:3bb750e1e04066fa884e9b",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "tutophia-firebase",
+          "configurations": {
+            "android": "1:338174668418:android:3bb750e1e04066fa884e9b",
+            "ios": "1:338174668418:ios:f2be404861bf6b10884e9b"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ],
+  "emulators": {
+    "auth": {
+      "host": "0.0.0.0",
+      "port": 9099
+    },
+    "firestore": {
+      "host": "0.0.0.0",
+      "port": 8080
+    },
+    "functions": {
+      "host": "0.0.0.0",
+      "port": 5001
+    },
+    "ui": {
+      "enabled": true,
+      "host": "0.0.0.0",
+      "port": 4000
+    }
+  }
+
+}

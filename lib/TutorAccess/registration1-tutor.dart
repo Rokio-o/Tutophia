@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:tutophia/login.dart';
 import 'package:tutophia/TutorAccess/registration2-tutor.dart';
 import 'package:tutophia/registration-type.dart';
+import 'package:tutophia/services/authentication/auth_registration_validator.dart';
 
 class TutorRegistration1 extends StatefulWidget {
   const TutorRegistration1({super.key});
@@ -152,6 +153,7 @@ class _TutorRegistration1State extends State<TutorRegistration1> {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey.shade400),
         suffixIcon: suffix,
+        errorMaxLines: 2,
         filled: true,
         fillColor: Colors.white,
         contentPadding:
@@ -258,12 +260,7 @@ class _TutorRegistration1State extends State<TutorRegistration1> {
   }
 
   String? validateEmail(String? v) {
-    if (v == null || v.isEmpty) return 'Email address is required';
-    if (!RegExp(
-      r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+(\.[a-zA-Z]+)?$',
-    ).hasMatch(v))
-      return 'Please enter a valid email address';
-    return null;
+    return AuthRegistrationValidator.validateRegistrationEmail(v);
   }
 
   String? validateUsername(String? v) {
@@ -549,9 +546,9 @@ class _TutorRegistration1State extends State<TutorRegistration1> {
               _section('Account Creation'),
 
               _field(
-                'Email Address',
+                'School/Institution Email Address',
                 emailController,
-                'Enter your email address',
+                'Enter your school email address',
                 validator: validateEmail,
                 keyboardType: TextInputType.emailAddress,
               ),

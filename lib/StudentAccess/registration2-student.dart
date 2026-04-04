@@ -191,7 +191,7 @@ class _StudentRegistration2State extends State<StudentRegistration2> {
               _field(
                 'Messenger',
                 messengerController,
-                'Enter messenger account link',
+                '',
                 validator: (v) => validateOptionalField(v, 'Messenger'),
                 required: false,
               ),
@@ -199,7 +199,7 @@ class _StudentRegistration2State extends State<StudentRegistration2> {
               _field(
                 'Instagram',
                 instagramController,
-                'Enter instagram account link',
+                '',
                 validator: (v) => validateOptionalField(v, 'Instagram'),
                 required: false,
               ),
@@ -207,7 +207,7 @@ class _StudentRegistration2State extends State<StudentRegistration2> {
               _field(
                 'Others',
                 othersController,
-                'Enter other accounts',
+                '',
                 validator: (v) => validateOptionalField(v, 'Other accounts'),
                 required: false,
               ),

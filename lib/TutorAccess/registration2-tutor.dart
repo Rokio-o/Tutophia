@@ -24,7 +24,7 @@ class _TutorRegistration2State extends State<TutorRegistration2> {
   final sessionDurationController = TextEditingController();
   final sessionRateController = TextEditingController();
   final availableScheduleController = TextEditingController();
-  final scheduleLinkController = TextEditingController();
+  final portfolioLinkController = TextEditingController();
   final contactController = TextEditingController();
   final messengerController = TextEditingController();
   final instagramController = TextEditingController();
@@ -59,7 +59,7 @@ class _TutorRegistration2State extends State<TutorRegistration2> {
       sessionDurationController,
       sessionRateController,
       availableScheduleController,
-      scheduleLinkController,
+      portfolioLinkController,
       contactController,
       messengerController,
       instagramController,
@@ -586,10 +586,10 @@ class _TutorRegistration2State extends State<TutorRegistration2> {
               const SizedBox(height: 20),
 
               _field(
-                'Links for documented schedule',
-                scheduleLinkController,
-                'You can put a link for excel/document regarding your detailed or updated schedule',
-                validator: (v) => validateOptionalField(v, 'Schedule link'),
+                'Portfolio or Tutoring Evidence Link',
+                portfolioLinkController,
+                'Add a portfolio or tutoring evidence link',
+                validator: (v) => validateOptionalField(v, 'Portfolio link'),
                 required: false,
               ),
               const SizedBox(height: 30),
@@ -612,7 +612,7 @@ class _TutorRegistration2State extends State<TutorRegistration2> {
               _field(
                 'Messenger',
                 messengerController,
-                'Enter messenger account link',
+                '',
                 validator: (v) => validateOptionalField(v, 'Messenger link'),
                 required: false,
               ),
@@ -620,7 +620,7 @@ class _TutorRegistration2State extends State<TutorRegistration2> {
               _field(
                 'Instagram',
                 instagramController,
-                'Enter instagram account link',
+                '',
                 validator: (v) => validateOptionalField(v, 'Instagram link'),
                 required: false,
               ),
@@ -628,7 +628,7 @@ class _TutorRegistration2State extends State<TutorRegistration2> {
               _field(
                 'Others',
                 othersController,
-                'Enter other accounts',
+                '',
                 validator: (v) => validateOptionalField(v, 'Other accounts'),
                 required: false,
               ),
@@ -705,7 +705,7 @@ class _TutorRegistration2State extends State<TutorRegistration2> {
                                 'availableSchedule': availableScheduleController
                                     .text
                                     .trim(),
-                                'scheduleLink': scheduleLinkController.text
+                                'portfolioLink': portfolioLinkController.text
                                     .trim(),
                                 'contactNumber': contactController.text.trim(),
                                 'messenger': messengerController.text.trim(),

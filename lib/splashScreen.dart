@@ -1,26 +1,61 @@
 // tutophia splash screen
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'login.dart';
+import 'package:tutophia/services/authentication/verified_home_router.dart';
+import 'package:tutophia/services/repository/authentication_repository/authentication_repository.dart';
+import 'package:tutophia/verify-email.dart';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _hasNavigated = false;
+
   @override
   void initState() {
     super.initState();
 
     // loading delay
-    Future.delayed(Duration(seconds: 5), () {
-      // navigate to login screen after delay for splash screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-      );
-    });
+    Future.delayed(const Duration(seconds: 5), _routeFromSplash);
+  }
+
+  Future<void> _routeFromSplash() async {
+    if (!mounted || _hasNavigated) return;
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+    Widget destination = const LoginScreen();
+
+    if (currentUser != null) {
+      final refreshedUser = await AuthenticationRepository.instance
+          .reloadCurrentUser();
+
+      if (refreshedUser != null) {
+        if (!refreshedUser.emailVerified) {
+          destination = VerifyEmailScreen(email: refreshedUser.email);
+        } else {
+          destination =
+              await VerifiedHomeRouter.resolve(refreshedUser) ??
+              const LoginScreen();
+          if (destination is LoginScreen) {
+            await AuthenticationRepository.instance.signOut();
+          }
+        }
+      }
+    }
+
+    if (!mounted || _hasNavigated) return;
+    _hasNavigated = true;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => destination),
+      (route) => false,
+    );
   }
 
   // visual design of the splash screen

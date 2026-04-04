@@ -26,7 +26,7 @@ class TutorProfileModel {
 
   // SCHEDULE
   String schedule;
-  String linkSchedule;
+  String portfolioLink;
 
   // CONTACT INFO
   String email;
@@ -51,12 +51,11 @@ class TutorProfileModel {
     this.sessionDuration = "1-2 hours",
     this.sessionRate = "₱300/hour",
     this.schedule = "Wednesday: 6-8 PM",
-    this.linkSchedule =
-        "https://calendly.com/jeancessgallo/30min?month=2024-06",
+    this.portfolioLink = '',
     this.email = "qjsgallo@gmail.com",
     this.phone = "09123487634",
-    this.messenger = "JeancessGallo/messenger.com",
-    this.instagram = "Cess/instagram.com",
-    this.others = "Rokio/github.com",
+    this.messenger = '',
+    this.instagram = '',
+    this.others = '',
   });
 }

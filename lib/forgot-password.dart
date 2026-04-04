@@ -14,6 +14,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -28,32 +29,82 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   static const Color kText = Color(0xFF0F0F0F);
 
   Future resetPassword() async {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
+    // Validate email
+    if (emailController.text.trim().isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Please enter your email address.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+        colorText: Colors.red,
       );
-      try {
-        await FirebaseAuth.instance.sendPasswordResetEmail(email: emailController.text.trim());
-        Get.snackbar(
-            "Success",
-            "Password reset email sent! Please check your inbox.",
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.greenAccent.withValues(alpha: 0.1),
-            colorText: Colors.green,
-          );
-      } catch (e) {
-        Get.snackbar(
-            "Error",
-            "Failed to send password reset email.",
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
-            colorText: Colors.red,
-          );
+      return;
+    }
+
+    // Simple email validation
+    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        .hasMatch(emailController.text.trim())) {
+      Get.snackbar(
+        "Error",
+        "Please enter a valid email address.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+        colorText: Colors.red,
+      );
+      return;
+    }
+
+    if (_isLoading) return; // Prevent multiple clicks
+
+    setState(() => _isLoading = true);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+          email: emailController.text.trim());
+      
+      // Dismiss the dialog
+      Navigator.of(context).pop();
+
+      Get.snackbar(
+        "Success",
+        "Password reset email sent! Please check your inbox.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.greenAccent.withValues(alpha: 0.1),
+        colorText: Colors.green,
+      );
+
+      // Clear email and navigate back after a short delay
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          emailController.clear();
+          Navigator.of(context).pop();
+        }
+      });
+    } catch (e) {
+      // Dismiss the dialog
+      Navigator.of(context).pop();
+
+      Get.snackbar(
+        "Error",
+        "Failed to send password reset email.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+        colorText: Colors.red,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,20 +251,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         width: double.infinity,
                         height: screenHeight * 0.065,
                         child: ElevatedButton(
-                          // password add
-                          onPressed: () {
-                            // Call the reset password function
+                          onPressed: _isLoading ? null : () {
                             resetPassword();
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: kBlue,
+                            backgroundColor: _isLoading ? Colors.grey : kBlue,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 0,
                           ),
                           child: Text(
-                            'SEND',
+                            _isLoading ? 'SENDING...' : 'SEND',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,

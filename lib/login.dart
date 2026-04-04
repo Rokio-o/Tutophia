@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/services/repository/authentication_repository/authentication_repository.dart';
 import 'package:tutophia/services/repository/authentication_repository/exceptions/signup_email_password_failure.dart';
-import 'package:tutophia/services/repository/user_repository/user_repository.dart';
+import 'package:tutophia/services/authentication/auth_registration_validator.dart';
+import 'package:tutophia/services/authentication/verified_home_router.dart';
 import 'package:tutophia/registration-type.dart';
-import 'StudentAccess/dashboard-student.dart';
-import 'TutorAccess/dashboard-tutor.dart';
 import 'forgot-password.dart';
+import 'verify-email.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,12 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   bool isPasswordVisible = false;
   bool isLoggingIn = false;
-
-  bool _isValidEmail(String email) {
-    return RegExp(
-      r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$',
-    ).hasMatch(email);
-  }
 
   @override
   void dispose() {
@@ -50,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (!_isValidEmail(email)) {
+    if (!AuthRegistrationValidator.isValidEmailFormat(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a valid email address.'),
@@ -66,31 +60,40 @@ class _LoginScreenState extends State<LoginScreen> {
       final credential = await AuthenticationRepository.instance
           .loginWithEmailAndPassword(email, password);
 
-      final uid = credential.user?.uid;
-      if (uid == null) {
+      await credential.user?.getIdToken(true);
+
+      final refreshedUser = await AuthenticationRepository.instance
+          .reloadCurrentUser();
+      if (refreshedUser == null) {
         throw const SignUpWithEmailAndPasswordFailure(
           'Unable to determine your account. Please try again.',
         );
       }
 
-      final role = await UserRepository.instance.getUserRole(uid);
+      if (!refreshedUser.emailVerified) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VerifyEmailScreen(email: refreshedUser.email),
+          ),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      final didNavigate = await VerifiedHomeRouter.navigate(
+        context,
+        user: refreshedUser,
+      );
       if (!mounted) return;
 
-      if (role == 'tutor') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => TutorDashboard()),
-        );
+      if (didNavigate) {
         return;
       }
 
-      if (role == 'student') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => StudentDashboard()),
-        );
-        return;
-      }
+      await AuthenticationRepository.instance.signOut();
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -142,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   return Icon(
                     Icons.school,
                     size: screenWidth * 0.25,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   );
                 },
               ),
@@ -211,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: Colors.grey[50],
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color.fromARGB(255, 0, 0, 0)!,
+                            color: const Color.fromARGB(255, 0, 0, 0),
                           ),
                         ),
                         child: TextField(
@@ -255,7 +258,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: Colors.grey[50],
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color.fromARGB(255, 0, 0, 0)!,
+                            color: const Color.fromARGB(255, 0, 0, 0),
                           ),
                         ),
                         child: TextField(

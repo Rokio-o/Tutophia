@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/StudentAccess/registration2-student.dart';
+import 'package:tutophia/services/authentication/auth_registration_validator.dart';
 import 'package:tutophia/services/repository/authentication_repository/authentication_repository.dart';
 import 'package:tutophia/services/repository/authentication_repository/exceptions/signup_email_password_failure.dart';
-import 'package:tutophia/successful-reg.dart';
+import 'package:tutophia/verify-email.dart';
 
 class TermsandConditionsStudent extends StatefulWidget {
   final Map<String, dynamic> registrationData;
@@ -23,6 +24,12 @@ class TermsandConditionsStudentState extends State<TermsandConditionsStudent> {
 
     final email = (widget.registrationData['email'] as String?)?.trim() ?? '';
     final password = widget.registrationData['password'] as String? ?? '';
+    final emailError = AuthRegistrationValidator.validateRegistrationEmail(
+      email,
+    );
+    final ageError = AuthRegistrationValidator.validateStudentAge(
+      widget.registrationData['age'],
+    );
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -36,20 +43,42 @@ class TermsandConditionsStudentState extends State<TermsandConditionsStudent> {
       return;
     }
 
+    if (emailError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(emailError), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    if (ageError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ageError), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     setState(() => _isCreatingAccount = true);
 
     try {
-      await AuthenticationRepository.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-        role: 'student',
-        profileData: widget.registrationData,
+      final credential = await AuthenticationRepository.instance
+          .createUserWithEmailAndPassword(
+            email: email,
+            password: password,
+            role: 'student',
+            profileData: widget.registrationData,
+          );
+
+      await AuthenticationRepository.instance.sendEmailVerification(
+        user: credential.user,
       );
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const SuccessfulRegistration()),
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(
+          builder: (context) =>
+              VerifyEmailScreen(email: credential.user?.email),
+        ),
+        (route) => false,
       );
     } on SignUpWithEmailAndPasswordFailure catch (e) {
       if (!mounted) return;
@@ -60,7 +89,9 @@ class TermsandConditionsStudentState extends State<TermsandConditionsStudent> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Something went wrong while creating your account.'),
+          content: Text(
+            'Something went wrong while creating your account. Please try again.',
+          ),
           backgroundColor: Colors.red,
         ),
       );

@@ -37,6 +37,11 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     return '';
   }
 
+  String _displayValue(String value) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? 'Not provided' : trimmed;
+  }
+
   Future<void> _loadProfileFromFirestore() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -643,7 +648,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             // CONTACT INFORMATION
             sectionCard(
               "Contact Information",
-              "Email: ${profile.email}\nPhone: ${profile.phone}\nMessenger: ${profile.messenger}\nInstagram: ${profile.instagram}\nOthers: ${profile.others}",
+              "Email: ${_displayValue(profile.email)}\nPhone: ${_displayValue(profile.phone)}\nMessenger: ${_displayValue(profile.messenger)}\nInstagram: ${_displayValue(profile.instagram)}\nOthers: ${_displayValue(profile.others)}",
               editContact,
             ),
 

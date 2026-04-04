@@ -99,24 +99,6 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final hasConflict = await BookingRepository.instance.hasApprovedOverlap(
-        tutorId: widget.tutor.uid,
-        start: start,
-        end: end,
-      );
-
-      if (hasConflict) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'The tutor already has an approved session during this time. Please choose another slot.',
-            ),
-          ),
-        );
-        return;
-      }
-
       final studentProfile =
           await UserRepository.instance.getUserProfile(uid) ?? <String, dynamic>{};
       final studentName =
