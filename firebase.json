@@ -23,6 +23,9 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "functions": [
     {
       "source": "functions",
@@ -36,8 +39,8 @@
         "*.local"
       ],
       "predeploy": [
-        "npm --prefix \"$RESOURCE_DIR\" run lint",
-        "npm --prefix \"$RESOURCE_DIR\" run build"
+        "npm --prefix functions run lint",
+        "npm --prefix functions run build"
       ]
     }
   ],
@@ -53,6 +56,10 @@
     "functions": {
       "host": "0.0.0.0",
       "port": 5001
+    },
+    "storage": {
+      "host": "0.0.0.0",
+      "port": 9199
     },
     "ui": {
       "enabled": true,

@@ -1,0 +1,44 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function isTutor() {
+      return isSignedIn() &&
+        firestore.exists(/databases/(default)/documents/Users/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/Users/$(request.auth.uid)).data.accountType == 'tutor';
+    }
+
+    function materialExists(materialId) {
+      return firestore.exists(/databases/(default)/documents/sessionMaterials/$(materialId));
+    }
+
+    function materialData(materialId) {
+      return firestore.get(/databases/(default)/documents/sessionMaterials/$(materialId)).data;
+    }
+
+    match /session_materials/{tutorId}/{materialId}/{fileName} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == tutorId ||
+        isAdmin() ||
+        (
+          materialExists(materialId) &&
+          materialData(materialId).studentId == request.auth.uid &&
+          materialData(materialId).status == 'active'
+        )
+      );
+
+      allow write: if isSignedIn() && request.auth.uid == tutorId && isTutor();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

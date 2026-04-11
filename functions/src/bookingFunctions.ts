@@ -11,6 +11,7 @@ import {
   formatSessionDateTime,
   getDataMap,
   isAdmin,
+  mapBookingDoc,
   optionalString,
   queueNotificationWrite,
   requireDateFromMillis,
@@ -22,6 +23,11 @@ interface BookingMutationResult {
   success: true;
   bookingId: string;
   status: string;
+}
+
+interface ReminderMutationResult {
+  success: true;
+  createdCount: number;
 }
 
 export const createBooking = onCall(async (request): Promise<BookingMutationResult> => {
@@ -328,3 +334,93 @@ export const completeBooking = onCall(async (request): Promise<BookingMutationRe
     status: BOOKING_STATUS.completed,
   };
 });
+
+export const ensureTodaySessionReminders = onCall(
+  async (request): Promise<ReminderMutationResult> => {
+    const callerUid = assertAuthenticated(request);
+    const data = getDataMap(request.data);
+    const forTutor = data.forTutor;
+
+    if (typeof forTutor !== "boolean") {
+      throw new HttpsError(
+        "invalid-argument",
+        "forTutor must be a boolean.",
+      );
+    }
+
+    const now = new Date();
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+
+    const participantField = forTutor ? "tutorId" : "studentId";
+    const bookingsSnapshot = await db()
+      .collection(BOOKINGS_COLLECTION)
+      .where(participantField, "==", callerUid)
+      .where("status", "==", BOOKING_STATUS.approved)
+      .where("sessionDateTime", ">=", Timestamp.fromDate(dayStart))
+      .where("sessionDateTime", "<", Timestamp.fromDate(dayEnd))
+      .get();
+
+    let createdCount = 0;
+
+    for (const doc of bookingsSnapshot.docs) {
+      const booking = mapBookingDoc(doc);
+      const bookingId = booking.bookingId.trim();
+      if (!bookingId) {
+        continue;
+      }
+
+      const sessionDateTime = booking.sessionDateTime;
+      const title = "Session Reminder";
+      const formattedSessionTime = formatSessionDateTime(sessionDateTime);
+      const participantName = forTutor ?
+        String(booking.studentName ?? "your student").trim() :
+        String(booking.tutorName ?? "your tutor").trim();
+      const body = forTutor ?
+        `You have an approved session with ${participantName} today at ` +
+          `${formattedSessionTime}.` :
+        `Your session with ${participantName} is scheduled today at ` +
+          `${formattedSessionTime}.`;
+      const senderId = forTutor ?
+        String(booking.studentId ?? "").trim() :
+        String(booking.tutorId ?? "").trim();
+      const targetScreen = forTutor ?
+        TARGET_SCREEN.tutorSessionRequests :
+        TARGET_SCREEN.studentBookings;
+      const notificationRef = db()
+        .collection("Users")
+        .doc(callerUid)
+        .collection("notifications")
+        .doc(`session_reminder_${bookingId}`);
+
+      await db().runTransaction(async (transaction) => {
+        const existingSnapshot = await transaction.get(notificationRef);
+        if (existingSnapshot.exists) {
+          return;
+        }
+
+        transaction.set(notificationRef, {
+          id: notificationRef.id,
+          type: NOTIFICATION_TYPE.sessionReminder,
+          title,
+          body,
+          recipientId: callerUid,
+          senderId,
+          bookingId,
+          status: "unread",
+          targetScreen,
+          createdAt: FieldValue.serverTimestamp(),
+          sessionDateTime: Timestamp.fromDate(sessionDateTime),
+        });
+
+        createdCount += 1;
+      });
+    }
+
+    return {
+      success: true,
+      createdCount,
+    };
+  },
+);

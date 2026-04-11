@@ -64,12 +64,42 @@ class SessionMaterialCard extends StatelessWidget {
             style: const TextStyle(fontSize: 13, color: Colors.black54),
           ),
 
+          if (data.subject.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              "Subject: ${data.subject}",
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
+            ),
+          ],
+
+          const SizedBox(height: 4),
+
+          Text(
+            "File: ${data.fileName.isNotEmpty ? data.fileName : 'Material link'}",
+            style: const TextStyle(fontSize: 13, color: Colors.black54),
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            "Type: ${data.fileType.toUpperCase()}${data.fileSizeBytes > 0 ? ' • ${_formatSize(data.fileSizeBytes)}' : ''}",
+            style: const TextStyle(fontSize: 12, color: Colors.black45),
+          ),
+
           const SizedBox(height: 4),
 
           Text(
             "Uploaded: ${_formatDate(data.uploadedAt)}",
             style: const TextStyle(fontSize: 12, color: Colors.black45),
           ),
+
+          if (data.description.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              data.description,
+              style: const TextStyle(fontSize: 13, color: Colors.black87),
+            ),
+          ],
 
           const SizedBox(height: 12),
 
@@ -79,7 +109,7 @@ class SessionMaterialCard extends StatelessWidget {
               onPressed: onDownload,
               icon: const Icon(Icons.download_rounded, size: 16),
               label: const Text(
-                "Download File",
+                "Open Material",
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
@@ -105,5 +135,15 @@ class SessionMaterialCard extends StatelessWidget {
     return "${date.month.toString().padLeft(2, '0')}/"
         "${date.day.toString().padLeft(2, '0')}/"
         "${date.year}";
+  }
+
+  String _formatSize(int bytes) {
+    if (bytes < 1024) {
+      return '$bytes B';
+    }
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }

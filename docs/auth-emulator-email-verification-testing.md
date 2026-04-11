@@ -13,7 +13,7 @@ This guide covers local testing for Tutophia sign-up, sign-in, allowed email dom
 Run the Firebase emulators from the repo root:
 
 ```bash
-npx -y firebase-tools@latest emulators:start --only auth,firestore
+npx -y firebase-tools@latest emulators:start --only auth,firestore,storage
 ```
 
 If you also want the rest of the local Firebase stack for broader app testing, run:
@@ -26,11 +26,19 @@ Useful local ports in the default setup:
 
 - Auth Emulator: `9099`
 - Firestore Emulator: `8080`
+- Storage Emulator: `9199`
 - Emulator Suite UI: `4000`
 
-## 2. Connect the Flutter app to the Auth emulator
+## 2. Connect the Flutter app to the local Firebase emulators
 
 Tutophia now supports debug-only emulator wiring through Dart defines.
+
+When `USE_FIREBASE_EMULATORS=true` is enabled, the app now connects to:
+
+- Firebase Auth emulator on `9099`
+- Firestore emulator on `8080`
+- Cloud Functions emulator on `5001`
+- Cloud Storage emulator on `9199`
 
 Typical local run command:
 
@@ -52,6 +60,20 @@ Host notes by platform:
 - Physical Android or iOS device: use your machine LAN IP with `FIREBASE_EMULATOR_HOST`
 
 Do not enable these Dart defines in production builds.
+
+## 2.1 Storage emulator notes
+
+The new session materials upload flow writes files to Cloud Storage and metadata to Firestore.
+
+That means local upload testing now requires the Storage emulator to be running alongside Firestore and Auth.
+
+Typical local materials test flow:
+
+1. Start the emulators.
+2. Run the Flutter app with `USE_FIREBASE_EMULATORS=true`.
+3. Upload a file as a tutor.
+4. Confirm the file appears in the Emulator Suite Storage tab.
+5. Confirm the matching metadata document appears in Firestore under `sessionMaterials`.
 
 ## 3. Create test users
 

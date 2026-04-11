@@ -30,12 +30,14 @@ class AuthenticationRepository extends GetxController {
       throw SignUpWithEmailAndPasswordFailure(emailValidationError);
     }
 
-    if (role.trim().toLowerCase() == 'student') {
-      final studentAgeError = AuthRegistrationValidator.validateStudentAge(
+    final normalizedRole = role.trim().toLowerCase();
+
+    if (normalizedRole == 'student' || normalizedRole == 'tutor') {
+      final ageError = AuthRegistrationValidator.validateStudentAge(
         profileData['age'],
       );
-      if (studentAgeError != null) {
-        throw SignUpWithEmailAndPasswordFailure(studentAgeError);
+      if (ageError != null) {
+        throw SignUpWithEmailAndPasswordFailure(ageError);
       }
     }
 

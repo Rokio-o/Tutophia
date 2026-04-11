@@ -75,9 +75,9 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login first.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please login first.')));
       return;
     }
 
@@ -100,7 +100,8 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
 
     try {
       final studentProfile =
-          await UserRepository.instance.getUserProfile(uid) ?? <String, dynamic>{};
+          await UserRepository.instance.getUserProfile(uid) ??
+          <String, dynamic>{};
       final studentName =
           '${_asString(studentProfile['firstName'])} ${_asString(studentProfile['lastName'])}'
               .trim();
@@ -140,9 +141,9 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit booking: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to submit booking: $e')));
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -178,6 +179,24 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
   double _parsePesoValue(String input) {
     final clean = input.replaceAll(RegExp(r'[^0-9.]'), '');
     return double.tryParse(clean) ?? 0;
+  }
+
+  Widget _buildSelectedCalendarDay(DateTime day) {
+    return Container(
+      margin: const EdgeInsets.all(6),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: const Color(0XFF2A31AB),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '${day.day}',
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
   }
 
   @override
@@ -225,14 +244,13 @@ class _StudentTutorBookingScreenState extends State<StudentTutorBookingScreen> {
                   formatButtonVisible: false,
                   titleCentered: true,
                 ),
-                calendarStyle: CalendarStyle(
+                calendarBuilders: CalendarBuilders(
+                  selectedBuilder: (context, day, focusedDay) =>
+                      _buildSelectedCalendarDay(day),
+                ),
+                calendarStyle: const CalendarStyle(
                   outsideDaysVisible: false,
                   isTodayHighlighted: false,
-                  selectedDecoration: BoxDecoration(
-                    color: const Color(0XFF2A31AB),
-                    shape: BoxShape.rectangle,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
               ),
             ),

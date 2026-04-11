@@ -26,6 +26,7 @@ export const NOTIFICATION_TYPE = {
   studentCancelledBooking: "student_cancelled_booking",
   bookingApproved: "booking_approved",
   bookingDeclined: "booking_declined",
+  sessionReminder: "session_reminder",
 } as const;
 
 export const NOTIFICATION_STATUS = {

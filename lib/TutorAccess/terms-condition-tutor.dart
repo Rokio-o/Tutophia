@@ -27,6 +27,9 @@ class TermsandConditionsTutorState extends State<TermsandConditionsTutor> {
     final emailError = AuthRegistrationValidator.validateRegistrationEmail(
       email,
     );
+    final ageError = AuthRegistrationValidator.validateStudentAge(
+      widget.registrationData['age'],
+    );
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -43,6 +46,13 @@ class TermsandConditionsTutorState extends State<TermsandConditionsTutor> {
     if (emailError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(emailError), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    if (ageError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ageError), backgroundColor: Colors.red),
       );
       return;
     }

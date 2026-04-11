@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tutophia/data/tutor-data/upload-materials-repository.dart';
 import 'package:tutophia/TutorAccess/tutor-menu/upload-materials.dart';
+import 'package:tutophia/models/tutor-model/upload-materials-data.dart';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -13,13 +13,15 @@ const Color kLightGrey = Color(0xFFF5F5F5);
 // ── StudentSelector ───────────────────────────────────────────────────────────
 
 class StudentSelector extends StatelessWidget {
-  final String? selectedStudent;
-  final ValueChanged<String> onStudentSelected;
+  final List<MaterialRecipient> recipients;
+  final MaterialRecipient? selectedRecipient;
+  final ValueChanged<MaterialRecipient> onStudentSelected;
   final VoidCallback onClear;
 
   const StudentSelector({
     super.key,
-    required this.selectedStudent,
+    required this.recipients,
+    required this.selectedRecipient,
     required this.onStudentSelected,
     required this.onClear,
   });
@@ -39,11 +41,14 @@ class StudentSelector extends StatelessWidget {
         ),
         const SizedBox(height: 8),
 
-        StudentSearchBar(onStudentSelected: onStudentSelected),
+        StudentSearchBar(
+          recipients: recipients,
+          onStudentSelected: onStudentSelected,
+        ),
 
-        if (selectedStudent != null) ...[
+        if (selectedRecipient != null) ...[
           const SizedBox(height: 10),
-          SelectedStudentRow(studentName: selectedStudent!, onClear: onClear),
+          SelectedStudentRow(recipient: selectedRecipient!, onClear: onClear),
         ],
       ],
     );
@@ -53,9 +58,14 @@ class StudentSelector extends StatelessWidget {
 // ── StudentSearchBar ──────────────────────────────────────────────────────────
 
 class StudentSearchBar extends StatefulWidget {
-  final ValueChanged<String> onStudentSelected;
+  final List<MaterialRecipient> recipients;
+  final ValueChanged<MaterialRecipient> onStudentSelected;
 
-  const StudentSearchBar({super.key, required this.onStudentSelected});
+  const StudentSearchBar({
+    super.key,
+    required this.recipients,
+    required this.onStudentSelected,
+  });
 
   @override
   State<StudentSearchBar> createState() => _StudentSearchBarState();
@@ -63,9 +73,8 @@ class StudentSearchBar extends StatefulWidget {
 
 class _StudentSearchBarState extends State<StudentSearchBar> {
   final TextEditingController _controller = TextEditingController();
-  final List<String> _allStudents = sampleStudentNames;
 
-  List<String> _filtered = [];
+  List<MaterialRecipient> _filtered = [];
   bool _showSuggestions = false;
 
   @override
@@ -80,9 +89,12 @@ class _StudentSearchBarState extends State<StudentSearchBar> {
         _filtered = [];
         _showSuggestions = false;
       } else {
-        _filtered = _allStudents
-            .where((s) => s.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+        _filtered = widget.recipients.where((recipient) {
+          final normalized = query.toLowerCase();
+          return recipient.studentName.toLowerCase().contains(normalized) ||
+              recipient.subject.toLowerCase().contains(normalized) ||
+              recipient.studentProgram.toLowerCase().contains(normalized);
+        }).toList();
         _showSuggestions = _filtered.isNotEmpty;
       }
     });
@@ -113,6 +125,24 @@ class _StudentSearchBarState extends State<StudentSearchBar> {
             ),
           ),
         ),
+        if (!_showSuggestions &&
+            _controller.text.isNotEmpty &&
+            widget.recipients.isNotEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text(
+              'No matching student bookings found.',
+              style: TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ),
+        if (widget.recipients.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text(
+              'No approved or completed bookings are available yet.',
+              style: TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ),
         if (_showSuggestions)
           Container(
             margin: const EdgeInsets.only(top: 4),
@@ -122,21 +152,21 @@ class _StudentSearchBarState extends State<StudentSearchBar> {
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: Column(
-              children: _filtered.map((name) {
+              children: _filtered.map((recipient) {
                 return InkWell(
                   onTap: () {
                     setState(() {
                       _showSuggestions = false;
                       _controller.clear();
                     });
-                    widget.onStudentSelected(name);
+                    widget.onStudentSelected(recipient);
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -151,7 +181,25 @@ class _StudentSearchBarState extends State<StudentSearchBar> {
                           color: Colors.grey,
                         ),
                         const SizedBox(width: 8),
-                        Text(name, style: const TextStyle(fontSize: 14)),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                recipient.studentName,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              if (recipient.subtitle.isNotEmpty)
+                                Text(
+                                  recipient.subtitle,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -167,12 +215,12 @@ class _StudentSearchBarState extends State<StudentSearchBar> {
 // ── SelectedStudentRow ────────────────────────────────────────────────────────
 
 class SelectedStudentRow extends StatelessWidget {
-  final String studentName;
+  final MaterialRecipient recipient;
   final VoidCallback onClear;
 
   const SelectedStudentRow({
     super.key,
-    required this.studentName,
+    required this.recipient,
     required this.onClear,
   });
 
@@ -197,15 +245,40 @@ class SelectedStudentRow extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              studentName,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  recipient.studentName,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                if (recipient.subtitle.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      recipient.subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
+          if (recipient.bookingId.isNotEmpty)
+            const Padding(
+              padding: EdgeInsets.only(right: 10),
+              child: Icon(
+                Icons.bookmark_outline,
+                size: 16,
+                color: kPrimaryBlue,
+              ),
+            ),
           GestureDetector(
             onTap: onClear,
             child: const Icon(Icons.close, size: 16, color: Colors.grey),
@@ -360,7 +433,6 @@ class FileUploadSection extends StatelessWidget {
             ),
             child: Column(
               children: [
-                // ── File icon ─────────────────────────────────────────────────
                 SizedBox(
                   width: 60,
                   height: 72,
@@ -400,7 +472,7 @@ class FileUploadSection extends StatelessWidget {
                               width: 34,
                               height: 1.5,
                               margin: const EdgeInsets.only(bottom: 5),
-                              color: kAmber.withOpacity(0.4),
+                              color: kAmber.withValues(alpha: 0.4),
                             ),
                           ),
                         ),
@@ -411,37 +483,52 @@ class FileUploadSection extends StatelessWidget {
 
                 const SizedBox(height: 14),
 
-                // ── Uploaded file chips ───────────────────────────────────────
                 if (uploadedFiles.isNotEmpty) ...[
                   ...List.generate(uploadedFiles.length, (i) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.insert_drive_file_outlined,
-                            size: 14,
-                            color: kPrimaryBlue,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            uploadedFiles[i],
-                            style: const TextStyle(
-                              fontSize: 12,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7FAFD),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: kBorderColor),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.insert_drive_file_outlined,
+                              size: 14,
                               color: kPrimaryBlue,
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          GestureDetector(
-                            onTap: () => onRemoveFile(i),
-                            child: const Icon(
-                              Icons.close,
-                              size: 14,
-                              color: Colors.grey,
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                uploadedFiles[i],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: kPrimaryBlue,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            GestureDetector(
+                              onTap: () => onRemoveFile(i),
+                              child: const Icon(
+                                Icons.close,
+                                size: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   }),
@@ -466,7 +553,6 @@ class FileUploadSection extends StatelessWidget {
 
         const SizedBox(height: 14),
 
-        // ── Add Another File ──────────────────────────────────────────────────
         GestureDetector(
           onTap: onAddAnother,
           child: Row(

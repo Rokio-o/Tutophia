@@ -5,6 +5,7 @@ import {
   cancelBooking,
   completeBooking,
   createBooking,
+  ensureTodaySessionReminders,
 } from "./bookingFunctions.js";
 
 initializeApp();
@@ -16,5 +17,6 @@ export {
   approveBooking,
   cancelBooking,
   completeBooking,
+  ensureTodaySessionReminders,
 };
 

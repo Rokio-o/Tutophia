@@ -290,9 +290,7 @@ class _TutorRegistration1State extends State<TutorRegistration1> {
   }
 
   String? validateAge() {
-    if (age == null) return 'Age is required';
-    if (age! < 15 || age! > 100) return 'Age must be between 15 and 100';
-    return null;
+    return AuthRegistrationValidator.validateStudentAge(age);
   }
 
   // ── Build ────────────────────────────────────────────────────────────────────

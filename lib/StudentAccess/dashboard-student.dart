@@ -8,6 +8,7 @@ import 'package:tutophia/StudentAccess/session-history-student.dart';
 import 'package:tutophia/StudentAccess/notifications-student.dart';
 import 'package:tutophia/StudentAccess/profile-student.dart';
 import 'package:tutophia/StudentAccess/menu-my_booking.dart';
+import 'package:tutophia/data/student-data/session-materials-repository.dart';
 import 'package:tutophia/services/repository/user_repository/user_repository.dart';
 import 'package:tutophia/data/student-data/booking_repository.dart';
 import 'package:tutophia/widgets/student-widgets/student-dashboard-card.dart';
@@ -27,8 +28,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
   String studentCourse = '';
   StreamSubscription<int>? _pendingSub;
   StreamSubscription<int>? _upcomingSub;
+  StreamSubscription<int>? _materialsSub;
 
-  // placeholder stats — replace with real data from backend
   int upcomingSessions = 0;
   int pendingBookings = 0;
   int newMaterials = 0;
@@ -44,6 +45,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   void dispose() {
     _pendingSub?.cancel();
     _upcomingSub?.cancel();
+    _materialsSub?.cancel();
     super.dispose();
   }
 
@@ -89,6 +91,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
         .listen((count) {
           if (!mounted) return;
           setState(() => upcomingSessions = count);
+        });
+
+    _materialsSub = SessionMaterialsRepository.instance
+        .watchStudentMaterialCount(uid)
+        .listen((count) {
+          if (!mounted) return;
+          setState(() => newMaterials = count);
         });
   }
 

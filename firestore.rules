@@ -1,6 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Assumed data model for session materials:
+    // sessionMaterials/{materialId}
+    // - materialId, tutorId, tutorName, studentId, studentName: strings
+    // - bookingId, subject, description, storagePath, downloadUrl: optional strings
+    // - title, fileName, contentType, fileType, visibility, status: strings
+    // - fileSizeBytes: int
+    // - createdAt, updatedAt: timestamps
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -13,10 +21,114 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function hasUserDoc(uid) {
+      return exists(/databases/$(database)/documents/Users/$(uid));
+    }
+
+    function userRole(uid) {
+      return hasUserDoc(uid)
+        ? get(/databases/$(database)/documents/Users/$(uid)).data.accountType
+        : '';
+    }
+
+    function isTutor() {
+      return isSignedIn() && userRole(request.auth.uid) == 'tutor';
+    }
+
     function isBookingParticipant() {
       return isSignedIn() && (
         resource.data.studentId == request.auth.uid ||
         resource.data.tutorId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    function hasMaterialField(data, field) {
+      return data.keys().hasAny([field]);
+    }
+
+    function isOptionalMaterialString(data, field, maxLength) {
+      return !hasMaterialField(data, field) ||
+        (data[field] is string && data[field].size() <= maxLength);
+    }
+
+    function isValidVisibility(value) {
+      return value in [
+        'student_only',
+        'booking_participants',
+        'tutor_only',
+      ];
+    }
+
+    function isValidStatus(value) {
+      return value in ['active', 'archived'];
+    }
+
+    function isValidStoragePath(value) {
+      return value == '' ||
+        value.matches('^session_materials/' + request.auth.uid + '/[^/]+/.+');
+    }
+
+    function hasOnlyMaterialFields(data) {
+      return data.keys().hasOnly([
+        'materialId',
+        'tutorId',
+        'tutorName',
+        'studentId',
+        'studentName',
+        'bookingId',
+        'subject',
+        'title',
+        'description',
+        'fileName',
+        'storagePath',
+        'downloadUrl',
+        'contentType',
+        'fileType',
+        'fileSizeBytes',
+        'visibility',
+        'status',
+        'createdAt',
+        'updatedAt',
+      ]);
+    }
+
+    function isValidMaterialPayload(data, materialId) {
+      return hasOnlyMaterialFields(data) &&
+        data.materialId == materialId &&
+        data.tutorId == request.auth.uid &&
+        data.tutorName is string && data.tutorName.size() > 0 && data.tutorName.size() <= 120 &&
+        data.studentId is string && data.studentId.size() > 0 && data.studentId.size() <= 128 &&
+        data.studentName is string && data.studentName.size() > 0 && data.studentName.size() <= 120 &&
+        isOptionalMaterialString(data, 'bookingId', 128) &&
+        isOptionalMaterialString(data, 'subject', 120) &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 120 &&
+        isOptionalMaterialString(data, 'description', 500) &&
+        data.fileName is string && data.fileName.size() > 0 && data.fileName.size() <= 200 &&
+        data.storagePath is string && data.storagePath.size() <= 400 && isValidStoragePath(data.storagePath) &&
+        data.downloadUrl is string && data.downloadUrl.size() <= 2000 &&
+        (data.storagePath.size() > 0 || data.downloadUrl.size() > 0) &&
+        data.contentType is string && data.contentType.size() > 0 && data.contentType.size() <= 200 &&
+        data.fileType is string && data.fileType.size() > 0 && data.fileType.size() <= 40 &&
+        data.fileSizeBytes is int && data.fileSizeBytes >= 0 && data.fileSizeBytes <= 30000000 &&
+        data.visibility is string && isValidVisibility(data.visibility) &&
+        data.status is string && isValidStatus(data.status) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isMaterialOwner() {
+      return isSignedIn() && resource.data.tutorId == request.auth.uid;
+    }
+
+    function canReadMaterial() {
+      return isSignedIn() && (
+        resource.data.tutorId == request.auth.uid ||
+        (
+          resource.data.studentId == request.auth.uid &&
+          resource.data.status == 'active' &&
+          resource.data.visibility in ['student_only', 'booking_participants']
+        ) ||
         isAdmin()
       );
     }
@@ -40,6 +152,41 @@ service cloud.firestore {
           ]) &&
           request.resource.data.status in ['unread', 'read'];
       }
+    }
+
+    match /sessionMaterials/{materialId} {
+      allow read: if canReadMaterial();
+
+      allow create: if isTutor() && isValidMaterialPayload(request.resource.data, materialId);
+
+      allow update: if (isMaterialOwner() || isAdmin()) &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'title',
+          'description',
+          'status',
+          'updatedAt',
+        ]) &&
+        request.resource.data.materialId == resource.data.materialId &&
+        request.resource.data.tutorId == resource.data.tutorId &&
+        request.resource.data.tutorName == resource.data.tutorName &&
+        request.resource.data.studentId == resource.data.studentId &&
+        request.resource.data.studentName == resource.data.studentName &&
+        request.resource.data.bookingId == resource.data.bookingId &&
+        request.resource.data.subject == resource.data.subject &&
+        request.resource.data.fileName == resource.data.fileName &&
+        request.resource.data.storagePath == resource.data.storagePath &&
+        request.resource.data.downloadUrl == resource.data.downloadUrl &&
+        request.resource.data.contentType == resource.data.contentType &&
+        request.resource.data.fileType == resource.data.fileType &&
+        request.resource.data.fileSizeBytes == resource.data.fileSizeBytes &&
+        request.resource.data.visibility == resource.data.visibility &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 120 &&
+        isOptionalMaterialString(request.resource.data, 'description', 500) &&
+        isValidStatus(request.resource.data.status) &&
+        request.resource.data.updatedAt is timestamp;
+
+      allow delete: if isMaterialOwner() || isAdmin();
     }
   }
 }
