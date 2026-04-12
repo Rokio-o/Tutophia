@@ -78,12 +78,12 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
               ),
               const SizedBox(height: 20),
               if (tutorId == null)
-                const Center(
-                  child: Text('Please login to view requests.'),
-                )
+                const Center(child: Text('Please login to view requests.'))
               else
                 StreamBuilder<List<BookingData>>(
-                  stream: BookingRepository.instance.watchTutorBookings(tutorId),
+                  stream: BookingRepository.instance.watchTutorBookings(
+                    tutorId,
+                  ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -111,7 +111,9 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
 
                     if (_selectedTab == 'Requests') {
                       if (pending.isEmpty) {
-                        return const Center(child: Text('No pending requests.'));
+                        return const Center(
+                          child: Text('No pending requests.'),
+                        );
                       }
 
                       return Column(
@@ -122,6 +124,7 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
                                 child: RequestCard(
                                   name: s.studentName,
                                   course: s.studentProgram,
+                                  userId: s.studentId,
                                   buttonText: 'View Request',
                                   onButtonTap: () => Navigator.push(
                                     context,
@@ -151,13 +154,13 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
                             child: RequestCard(
                               name: s.studentName,
                               course: s.studentProgram,
+                              userId: s.studentId,
                               buttonText: 'View Session Details',
                               onButtonTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => SessionDetailsScreen(
-                                    booking: s,
-                                  ),
+                                  builder: (_) =>
+                                      SessionDetailsScreen(booking: s),
                                 ),
                               ),
                             ),
@@ -169,6 +172,7 @@ class _SessionRequestsScreenState extends State<SessionRequestsScreen> {
                             child: CancelledRequestCard(
                               name: s.studentName,
                               course: s.studentProgram,
+                              userId: s.studentId,
                             ),
                           ),
                         ),

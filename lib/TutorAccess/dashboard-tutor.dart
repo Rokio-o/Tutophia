@@ -29,7 +29,7 @@ class _TutorDashboardState extends State<TutorDashboard> {
   String tutorName = "Tutor";
   String tutorType = "Tutor";
   String tutorCourse = "";
-  final String? tutorProfileImage = " ";
+  String? tutorProfileImageUrl;
   int upcomingSessions = 0;
   int bookingRequests = 0;
 
@@ -65,6 +65,7 @@ class _TutorDashboardState extends State<TutorDashboard> {
     final dbTutorType = _asString(data['tutorType']);
     final program = _asString(data['program']);
     final university = _asString(data['university']);
+    final imageUrl = _asString(data['profileImageUrl']);
 
     setState(() {
       tutorName = fullName.isNotEmpty ? fullName : tutorName;
@@ -72,6 +73,7 @@ class _TutorDashboardState extends State<TutorDashboard> {
       tutorCourse = program.isNotEmpty
           ? program
           : (university.isNotEmpty ? university : tutorCourse);
+      tutorProfileImageUrl = imageUrl.isNotEmpty ? imageUrl : null;
     });
   }
 
@@ -79,12 +81,12 @@ class _TutorDashboardState extends State<TutorDashboard> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    _pendingSub = BookingRepository.instance
-        .watchTutorPendingCount(uid)
-        .listen((count) {
-          if (!mounted) return;
-          setState(() => bookingRequests = count);
-        });
+    _pendingSub = BookingRepository.instance.watchTutorPendingCount(uid).listen(
+      (count) {
+        if (!mounted) return;
+        setState(() => bookingRequests = count);
+      },
+    );
 
     _upcomingSub = BookingRepository.instance
         .watchTutorUpcomingApprovedCount(uid)
@@ -119,7 +121,7 @@ class _TutorDashboardState extends State<TutorDashboard> {
                 course: tutorCourse,
                 upcomingSessions: upcomingSessions,
                 bookingRequests: bookingRequests,
-                profileImagePath: tutorProfileImage,
+                profileImageSource: tutorProfileImageUrl,
               ),
 
               const SizedBox(height: 30),

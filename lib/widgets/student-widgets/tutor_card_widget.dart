@@ -7,6 +7,10 @@ class TutorCardWidget extends StatelessWidget {
 
   const TutorCardWidget({super.key, required this.tutor});
 
+  bool _isNetworkImage(String value) {
+    return value.startsWith('http://') || value.startsWith('https://');
+  }
+
   @override
   Widget build(BuildContext context) {
     // Main tutor card used in Find Tutors screen.
@@ -28,13 +32,21 @@ class TutorCardWidget extends StatelessWidget {
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
             child: tutor.imagePath.isNotEmpty
-                ? Image.asset(
-                    tutor.imagePath,
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (c, e, s) => _buildPlaceholderImage(),
-                  )
+                ? _isNetworkImage(tutor.imagePath)
+                      ? Image.network(
+                          tutor.imagePath,
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => _buildPlaceholderImage(),
+                        )
+                      : Image.asset(
+                          tutor.imagePath,
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => _buildPlaceholderImage(),
+                        )
                 : _buildPlaceholderImage(),
           ),
           Padding(

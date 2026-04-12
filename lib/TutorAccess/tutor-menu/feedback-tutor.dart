@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tutophia/widgets/tutor-widgets/header-tutor-wdgt.dart';
 import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
@@ -27,67 +28,108 @@ class FeedbackTutorScreen extends StatefulWidget {
 
 class _FeedbackTutorScreenState extends State<FeedbackTutorScreen> {
   _FeedbackTab _activeTab = _FeedbackTab.giveFeedback;
+  final TutorFeedbackRepository _repository = TutorFeedbackRepository.instance;
 
-  late List<StudentToRateData> _studentsToRate;
-  late List<TutorFeedbackGivenData> _myFeedback;
-  late List<StudentRatingData> _studentRatings;
-
-  @override
-  void initState() {
-    super.initState();
-    _studentsToRate = List.from(sampleStudentsToRate);
-    _myFeedback = List.from(sampleFeedbackGiven);
-    _studentRatings = List.from(sampleStudentRatings);
-  }
-
-  void _openGiveFeedbackScreen(StudentToRateData student) {
-    Navigator.push(
+  Future<void> _openGiveFeedbackScreen(StudentToRateData student) async {
+    final saved = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => GiveFeedbackScreen(
           student: student,
-          onSave: (feedback) {
-            setState(() {
-              _studentsToRate.removeWhere((s) => s.id == student.id);
-              _myFeedback.insert(
-                0,
-                TutorFeedbackGivenData(
-                  id: student.id,
-                  studentName: student.name,
-                  program: student.program,
-                  imagePath: student.imagePath,
-                  feedback: feedback,
-                ),
-              );
-              _activeTab = _FeedbackTab.myFeedback;
-            });
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Feedback saved!')));
-          },
+          onSave: (feedback) => _repository.submitTutorFeedback(
+            student: student,
+            advice: feedback,
+          ),
         ),
       ),
     );
+
+    if (saved == true && mounted) {
+      setState(() => _activeTab = _FeedbackTab.myFeedback);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Feedback saved!')));
+    }
   }
 
   // ---------- BODY CONTENT ----------
 
-  Widget _buildBodyContent() {
+  Widget _buildBodyContent(String tutorId) {
     switch (_activeTab) {
       case _FeedbackTab.giveFeedback:
-        return _GiveFeedbackList(
-          students: _studentsToRate,
-          onGiveFeedback: _openGiveFeedbackScreen,
+        return StreamBuilder<List<StudentToRateData>>(
+          stream: _repository.watchStudentsPendingFeedback(tutorId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  'Error loading pending feedback: ${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+              );
+            }
+
+            return _GiveFeedbackList(
+              students: snapshot.data ?? const <StudentToRateData>[],
+              onGiveFeedback: _openGiveFeedbackScreen,
+            );
+          },
         );
       case _FeedbackTab.myFeedback:
-        return _MyFeedbackList(feedbackList: _myFeedback);
+        return StreamBuilder<List<TutorFeedbackGivenData>>(
+          stream: _repository.watchFeedbackGiven(tutorId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  'Error loading feedback given: ${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+              );
+            }
+
+            return _MyFeedbackList(
+              feedbackList: snapshot.data ?? const <TutorFeedbackGivenData>[],
+            );
+          },
+        );
       case _FeedbackTab.studentsFeedback:
-        return _StudentsFeedbackList(ratings: _studentRatings);
+        return StreamBuilder<List<StudentRatingData>>(
+          stream: _repository.watchStudentRatings(tutorId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  'Error loading student ratings: ${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+              );
+            }
+
+            return _StudentsFeedbackList(
+              ratings: snapshot.data ?? const <StudentRatingData>[],
+            );
+          },
+        );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final tutorId = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -116,7 +158,17 @@ class _FeedbackTutorScreenState extends State<FeedbackTutorScreen> {
 
             const SizedBox(height: 16),
 
-            Expanded(child: _buildBodyContent()),
+            Expanded(
+              child: tutorId == null
+                  ? const Center(
+                      child: Text(
+                        'Please log in to access feedback.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 14, color: Colors.black45),
+                      ),
+                    )
+                  : _buildBodyContent(tutorId),
+            ),
           ],
         ),
       ),

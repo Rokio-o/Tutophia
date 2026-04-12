@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/widgets/profile-avatar.dart';
 
 // ── Original Request Card ─────────────────────────────────────────────────────
 
 class RequestCard extends StatelessWidget {
   final String name;
   final String course;
-  final String image;
-  final bool hasImage;
+  final String? profileImageSource;
+  final String? userId;
   final String buttonText;
   final VoidCallback onButtonTap;
 
@@ -16,8 +17,8 @@ class RequestCard extends StatelessWidget {
     required this.course,
     required this.buttonText,
     required this.onButtonTap,
-    this.image = '',
-    this.hasImage = false,
+    this.profileImageSource,
+    this.userId,
   });
 
   @override
@@ -39,27 +40,11 @@ class RequestCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              // Avatar
-              Container(
-                width: 70,
-                height: 70,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-                child: hasImage && image.isNotEmpty
-                    ? ClipOval(
-                        child: Image.asset(
-                          image,
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => const Icon(
-                            Icons.person,
-                            size: 45,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      )
-                    : const Icon(Icons.person, size: 45, color: Colors.grey),
+              ProfileAvatar(
+                size: 70,
+                iconSize: 45,
+                imageSource: profileImageSource,
+                userId: userId,
               ),
 
               const SizedBox(width: 15),
@@ -123,16 +108,16 @@ class RequestCard extends StatelessWidget {
 class CancelledRequestCard extends StatelessWidget {
   final String name;
   final String course;
-  final String image;
-  final bool hasImage;
+  final String? profileImageSource;
+  final String? userId;
   final VoidCallback? onTap;
 
   const CancelledRequestCard({
     super.key,
     required this.name,
     required this.course,
-    this.image = '',
-    this.hasImage = false,
+    this.profileImageSource,
+    this.userId,
     this.onTap,
   });
 
@@ -155,51 +140,12 @@ class CancelledRequestCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              // Avatar (greyed out)
-              Container(
-                width: 70,
-                height: 70,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-                child: ColorFiltered(
-                  colorFilter: const ColorFilter.matrix([
-                    0.2126,
-                    0.7152,
-                    0.0722,
-                    0,
-                    0,
-                    0.2126,
-                    0.7152,
-                    0.0722,
-                    0,
-                    0,
-                    0.2126,
-                    0.7152,
-                    0.0722,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    1,
-                    0,
-                  ]),
-                  child: hasImage && image.isNotEmpty
-                      ? ClipOval(
-                          child: Image.asset(
-                            image,
-                            fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) => const Icon(
-                              Icons.person,
-                              size: 45,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        )
-                      : const Icon(Icons.person, size: 45, color: Colors.grey),
-                ),
+              ProfileAvatar(
+                size: 70,
+                iconSize: 45,
+                imageSource: profileImageSource,
+                userId: userId,
+                grayscale: true,
               ),
 
               const SizedBox(width: 15),

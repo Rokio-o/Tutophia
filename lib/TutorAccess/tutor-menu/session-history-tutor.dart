@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
 import 'package:tutophia/widgets/tutor-widgets/header-tutor-wdgt.dart';
@@ -5,10 +6,11 @@ import 'package:tutophia/TutorAccess/dashboard-tutor.dart';
 import 'package:tutophia/TutorAccess/notification-tutor.dart';
 import 'package:tutophia/TutorAccess/profile-tutor.dart';
 import 'package:tutophia/widgets/tutor-widgets/session-history-card.dart';
-import 'package:tutophia/TutorAccess/tutor-menu/rate-students.dart';
+import 'package:tutophia/TutorAccess/give-feedback.dart';
 import 'package:tutophia/TutorAccess/tutor-menu/upload-materials.dart';
 import 'package:tutophia/models/tutor-model/feedback-tutor-data.dart';
 import 'package:tutophia/models/tutor-model/session-history-data.dart';
+import 'package:tutophia/data/tutor-data/feedback-tutor-repository.dart';
 import 'package:tutophia/data/tutor-data/session-history-repository.dart';
 
 // ── SessionHistoryScreen ──────────────────────────────────────────────────────
@@ -25,34 +27,60 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  late List<SessionStudentData> _students;
-
-  @override
-  void initState() {
-    super.initState();
-    _students = List.from(sampleSessionStudents);
-  }
-
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  List<SessionStudentData> get _filteredStudents {
-    if (_searchQuery.isEmpty) return _students;
+  List<SessionStudentData> _filterStudents(List<SessionStudentData> students) {
+    if (_searchQuery.isEmpty) return students;
     final q = _searchQuery.toLowerCase();
-    return _students
+    return students
         .where(
           (s) =>
               s.name.toLowerCase().contains(q) ||
-              s.program.toLowerCase().contains(q),
+              s.program.toLowerCase().contains(q) ||
+              s.subject.toLowerCase().contains(q),
         )
         .toList();
   }
 
+  StudentToRateData _feedbackTargetFromSession(SessionStudentData student) {
+    return StudentToRateData(
+      id: student.bookingId.isNotEmpty ? student.bookingId : student.id,
+      studentId: student.id,
+      bookingId: student.bookingId,
+      name: student.name,
+      program: student.program,
+      imagePath: student.imagePath,
+    );
+  }
+
+  Future<void> _openGiveFeedback(SessionStudentData student) async {
+    final feedbackTarget = _feedbackTargetFromSession(student);
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GiveFeedbackScreen(
+          student: feedbackTarget,
+          onSave: (feedback) => TutorFeedbackRepository.instance
+              .submitTutorFeedback(student: feedbackTarget, advice: feedback),
+        ),
+      ),
+    );
+
+    if (saved == true && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Feedback saved!')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tutorId = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -103,48 +131,67 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
 
             // ── Student list ──────────────────────────────────────────────────
             Expanded(
-              child: _filteredStudents.isEmpty
+              child: tutorId == null
                   ? const Center(
                       child: Text(
-                        'No students found.',
+                        'Please log in to view completed sessions.',
+                        textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 14, color: Colors.black45),
                       ),
                     )
-                  : ListView.builder(
-                      itemCount: _filteredStudents.length,
-                      itemBuilder: (_, i) {
-                        final student = _filteredStudents[i];
-                        return SessionHistoryCard(
-                          key: ValueKey(student.id),
-                          student: student,
-                          onGiveFeedback: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => RateStudentScreen(
-                                  student: StudentToRateData(
-                                    id: student.id,
-                                    name: student.name,
-                                    program: student.program,
-                                    imagePath: student.imagePath,
+                  : StreamBuilder<List<SessionStudentData>>(
+                      stream: TutorSessionHistoryRepository.instance
+                          .watchCompletedStudents(tutorId),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'Error loading session history: ${snapshot.error}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.redAccent),
+                            ),
+                          );
+                        }
+
+                        final students = _filterStudents(
+                          snapshot.data ?? const <SessionStudentData>[],
+                        );
+                        if (students.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              'No completed students found.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black45,
+                              ),
+                            ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          itemCount: students.length,
+                          itemBuilder: (_, i) {
+                            final student = students[i];
+                            return SessionHistoryCard(
+                              key: ValueKey(student.bookingId),
+                              student: student,
+                              onGiveFeedback: () => _openGiveFeedback(student),
+                              onGiveMaterials: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const UploadMaterialsScreen(),
                                   ),
-                                  onSave: (rating, comment) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Rating saved!'),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                          onGiveMaterials: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const UploadMaterialsScreen(),
-                              ),
+                                );
+                              },
                             );
                           },
                         );

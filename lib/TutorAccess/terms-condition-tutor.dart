@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:tutophia/TutorAccess/registration2-tutor.dart';
 import 'package:tutophia/services/authentication/auth_registration_validator.dart';
@@ -24,6 +26,8 @@ class TermsandConditionsTutorState extends State<TermsandConditionsTutor> {
 
     final email = (widget.registrationData['email'] as String?)?.trim() ?? '';
     final password = widget.registrationData['password'] as String? ?? '';
+    final profileImageFile =
+        widget.registrationData['profileImageFile'] as File?;
     final emailError = AuthRegistrationValidator.validateRegistrationEmail(
       email,
     );
@@ -66,6 +70,7 @@ class TermsandConditionsTutorState extends State<TermsandConditionsTutor> {
             password: password,
             role: 'tutor',
             profileData: widget.registrationData,
+            profileImageFile: profileImageFile,
           );
 
       await AuthenticationRepository.instance.sendEmailVerification(

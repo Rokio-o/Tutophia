@@ -748,6 +748,7 @@ class _StudentRegistration1State extends State<StudentRegistration1> {
                                 'email': emailController.text.trim(),
                                 'userName': usernameController.text.trim(),
                                 'password': passwordController.text,
+                                'profileImageFile': _profileImage,
                               },
                             ),
                           ),

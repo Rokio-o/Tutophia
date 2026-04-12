@@ -22,9 +22,9 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   final TutorProfileModel profile = TutorProfileModel();
   String university = '';
 
-  File? profileImage;
   String? profileImageUrl;
   final ImagePicker picker = ImagePicker();
+  bool _isUploadingProfileImage = false;
 
   @override
   void initState() {
@@ -112,10 +112,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       profile.schedule = _asString(data['availableSchedule']).isNotEmpty
           ? _asString(data['availableSchedule'])
           : profile.schedule;
-        final portfolioLink = _asString(data['portfolioLink']).isNotEmpty
+      final portfolioLink = _asString(data['portfolioLink']).isNotEmpty
           ? _asString(data['portfolioLink'])
           : _asString(data['scheduleLink']);
-        profile.portfolioLink = portfolioLink.isNotEmpty
+      profile.portfolioLink = portfolioLink.isNotEmpty
           ? portfolioLink
           : profile.portfolioLink;
       profile.email = _asString(data['email']).isNotEmpty
@@ -167,12 +167,50 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   }
 
   // ---------- PICK IMAGE ----------
-  Future pickImage() async {
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
+  Future<void> pickImage() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || _isUploadingProfileImage) return;
+
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 800,
+    );
+    if (picked == null) return;
+
+    setState(() => _isUploadingProfileImage = true);
+
+    try {
+      final imageData = await UserRepository.instance.updateProfileImage(
+        uid: uid,
+        imageFile: File(picked.path),
+      );
+
+      if (!mounted) return;
+
       setState(() {
-        profileImage = File(picked.path);
+        profileImageUrl = imageData['profileImageUrl'];
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile picture updated successfully.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update profile picture. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingProfileImage = false);
+      }
     }
   }
 
@@ -827,19 +865,39 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
           children: [
             // PROFILE PICTURE
             GestureDetector(
-              onTap: pickImage,
-              child: CircleAvatar(
-                radius: 62,
-                backgroundColor: const Color(0xFF000000),
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundImage: profileImage != null
-                      ? FileImage(profileImage!)
-                      : profileImageUrl != null
-                      ? NetworkImage(profileImageUrl!)
-                      : const AssetImage("assets/image/default_profile.jpg")
-                            as ImageProvider,
-                ),
+              onTap: _isUploadingProfileImage ? null : pickImage,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 62,
+                    backgroundColor: const Color(0xFF000000),
+                    child: CircleAvatar(
+                      radius: 60,
+                      backgroundColor: Colors.grey.shade200,
+                      backgroundImage: profileImageUrl != null
+                          ? NetworkImage(profileImageUrl!)
+                          : null,
+                      child: profileImageUrl == null
+                          ? const Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Colors.grey,
+                            )
+                          : null,
+                    ),
+                  ),
+                  if (_isUploadingProfileImage)
+                    const CircleAvatar(
+                      radius: 62,
+                      backgroundColor: Color(0x88000000),
+                      child: SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(strokeWidth: 3),
+                      ),
+                    ),
+                ],
               ),
             ),
 

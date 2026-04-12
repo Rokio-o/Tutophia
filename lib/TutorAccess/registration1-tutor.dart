@@ -646,6 +646,7 @@ class _TutorRegistration1State extends State<TutorRegistration1> {
                                 'email': emailController.text.trim(),
                                 'userName': usernameController.text.trim(),
                                 'password': passwordController.text,
+                                'profileImageFile': _profileImage,
                               },
                             ),
                           ),

@@ -26,6 +26,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   int _selectedIndex = 0;
   String studentName = 'Student';
   String studentCourse = '';
+  String? studentProfileImageUrl;
   StreamSubscription<int>? _pendingSub;
   StreamSubscription<int>? _upcomingSub;
   StreamSubscription<int>? _materialsSub;
@@ -66,12 +67,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final fullName = '$firstName $lastName'.trim();
     final program = _asString(data['program']);
     final university = _asString(data['university']);
+    final imageUrl = _asString(data['profileImageUrl']);
 
     setState(() {
       studentName = fullName.isNotEmpty ? fullName : studentName;
       studentCourse = program.isNotEmpty
           ? program
           : (university.isNotEmpty ? university : studentCourse);
+      studentProfileImageUrl = imageUrl.isNotEmpty ? imageUrl : null;
     });
   }
 
@@ -126,8 +129,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 upcomingSessions: upcomingSessions,
                 pendingBookings: pendingBookings,
                 newMaterials: newMaterials,
-                profileImagePath:
-                    "assets/icons/student_profile_placeholder.png",
+                profileImageSource: studentProfileImageUrl,
               ),
 
               const SizedBox(height: 25),

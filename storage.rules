@@ -23,6 +23,25 @@ service firebase.storage {
       return firestore.get(/databases/(default)/documents/sessionMaterials/$(materialId)).data;
     }
 
+    function isValidProfileImageUpload() {
+      return request.resource != null &&
+        request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    match /profile_images/{userId}/{fileName} {
+      allow read: if isSignedIn();
+
+      allow create, update: if isSignedIn() &&
+        request.auth.uid == userId &&
+        fileName == 'profile.jpg' &&
+        isValidProfileImageUpload();
+
+      allow delete: if isSignedIn() &&
+        fileName == 'profile.jpg' &&
+        (request.auth.uid == userId || isAdmin());
+    }
+
     match /session_materials/{tutorId}/{materialId}/{fileName} {
       allow read: if isSignedIn() && (
         request.auth.uid == tutorId ||

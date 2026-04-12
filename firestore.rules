@@ -21,6 +21,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function feedbackBookingPath(bookingId) {
+      return /databases/$(database)/documents/bookings/$(bookingId);
+    }
+
     function hasUserDoc(uid) {
       return exists(/databases/$(database)/documents/Users/$(uid));
     }
@@ -47,9 +51,128 @@ service cloud.firestore {
       return data.keys().hasAny([field]);
     }
 
+    function isOptionalString(data, field, maxLength) {
+      return !data.keys().hasAny([field]) ||
+        (data[field] is string && data[field].size() <= maxLength);
+    }
+
+    function isValidProfileImagePath(data, userId) {
+      return !data.keys().hasAny(['profileImagePath']) ||
+        (
+          data.profileImagePath is string &&
+          data.profileImagePath.matches(
+            '^profile_images/' + userId + '/profile\\.jpg$'
+          )
+        );
+    }
+
+    function isValidUserProfileImageMetadata(data, userId) {
+      return isOptionalString(data, 'profileImageUrl', 2000) &&
+        isValidProfileImagePath(data, userId);
+    }
+
     function isOptionalMaterialString(data, field, maxLength) {
       return !hasMaterialField(data, field) ||
         (data[field] is string && data[field].size() <= maxLength);
+    }
+
+    function hasFeedbackField(data, field) {
+      return data.keys().hasAny([field]);
+    }
+
+    function isOptionalFeedbackString(data, field, maxLength) {
+      return !hasFeedbackField(data, field) ||
+        (data[field] is string && data[field].size() <= maxLength);
+    }
+
+    function hasOnlyFeedbackFields(data) {
+      return data.keys().hasOnly([
+        'feedbackId',
+        'bookingId',
+        'direction',
+        'authorId',
+        'authorRole',
+        'recipientId',
+        'recipientRole',
+        'studentId',
+        'tutorId',
+        'rating',
+        'comment',
+        'advice',
+        'createdAt',
+        'updatedAt',
+      ]);
+    }
+
+    function isFeedbackParticipant(data) {
+      return data != null && isSignedIn() && (
+        data.authorId == request.auth.uid ||
+        data.recipientId == request.auth.uid ||
+        data.studentId == request.auth.uid ||
+        data.tutorId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    function isPublicTutorReview(data) {
+      return data != null && isSignedIn() &&
+        data.direction == 'student_to_tutor';
+    }
+
+    function hasValidFeedbackBooking(data) {
+      return data.bookingId is string &&
+        data.bookingId.size() > 0 &&
+        data.bookingId.size() <= 128 &&
+        exists(feedbackBookingPath(data.bookingId)) &&
+        get(feedbackBookingPath(data.bookingId)).data.status == 'completed' &&
+        get(feedbackBookingPath(data.bookingId)).data.studentId == data.studentId &&
+        get(feedbackBookingPath(data.bookingId)).data.tutorId == data.tutorId;
+    }
+
+    function isValidFeedbackCommon(data, feedbackId) {
+      return hasOnlyFeedbackFields(data) &&
+        data.feedbackId == feedbackId &&
+        hasValidFeedbackBooking(data) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        data.createdAt == data.updatedAt &&
+        data.authorId is string && data.authorId.size() > 0 && data.authorId.size() <= 128 &&
+        data.recipientId is string && data.recipientId.size() > 0 && data.recipientId.size() <= 128 &&
+        data.studentId is string && data.studentId.size() > 0 && data.studentId.size() <= 128 &&
+        data.tutorId is string && data.tutorId.size() > 0 && data.tutorId.size() <= 128 &&
+        data.direction is string &&
+        data.direction in ['student_to_tutor', 'tutor_to_student'] &&
+        data.authorRole is string && data.authorRole in ['student', 'tutor'] &&
+        data.recipientRole is string && data.recipientRole in ['student', 'tutor'] &&
+        isOptionalFeedbackString(data, 'comment', 1000) &&
+        isOptionalFeedbackString(data, 'advice', 1000);
+    }
+
+    function isValidStudentReviewCreate(data, feedbackId) {
+      return isValidFeedbackCommon(data, feedbackId) &&
+        feedbackId == 'studentReview_' + data.bookingId &&
+        request.auth.uid == data.studentId &&
+        request.auth.uid == data.authorId &&
+        data.direction == 'student_to_tutor' &&
+        data.authorRole == 'student' &&
+        data.recipientId == data.tutorId &&
+        data.recipientRole == 'tutor' &&
+        data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+        (!hasFeedbackField(data, 'advice') || data.advice == '');
+    }
+
+    function isValidTutorAdviceCreate(data, feedbackId) {
+      return isValidFeedbackCommon(data, feedbackId) &&
+        feedbackId == 'tutorAdvice_' + data.bookingId &&
+        request.auth.uid == data.tutorId &&
+        request.auth.uid == data.authorId &&
+        data.direction == 'tutor_to_student' &&
+        data.authorRole == 'tutor' &&
+        data.recipientId == data.studentId &&
+        data.recipientRole == 'student' &&
+        data.advice is string && data.advice.size() > 0 && data.advice.size() <= 1000 &&
+        (!hasFeedbackField(data, 'rating')) &&
+        (!hasFeedbackField(data, 'comment') || data.comment == '');
     }
 
     function isValidVisibility(value) {
@@ -140,7 +263,8 @@ service cloud.firestore {
 
     match /Users/{userId} {
       allow read: if isSignedIn();
-      allow create, update: if isOwner(userId) || isAdmin();
+      allow create, update: if (isOwner(userId) || isAdmin()) &&
+        isValidUserProfileImageMetadata(request.resource.data, userId);
       allow delete: if isAdmin();
 
       match /notifications/{notificationId} {
@@ -187,6 +311,18 @@ service cloud.firestore {
         request.resource.data.updatedAt is timestamp;
 
       allow delete: if isMaterialOwner() || isAdmin();
+    }
+
+    match /sessionFeedback/{feedbackId} {
+      allow read: if isFeedbackParticipant(resource.data) ||
+        isPublicTutorReview(resource.data);
+
+      allow create: if isSignedIn() && (
+        isValidStudentReviewCreate(request.resource.data, feedbackId) ||
+        isValidTutorAdviceCreate(request.resource.data, feedbackId)
+      );
+
+      allow update, delete: if false;
     }
   }
 }

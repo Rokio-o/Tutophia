@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/widgets/profile-avatar.dart';
 
 class TutorSummaryCard extends StatelessWidget {
   final String name;
@@ -32,22 +33,19 @@ class TutorSummaryCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 75,
-            height: 75,
+            width: 79,
+            height: 79,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.grey.shade600,
               border: Border.all(color: Colors.black, width: 1.5),
-              image: imagePath.isNotEmpty
-                  ? DecorationImage(
-                      image: AssetImage(imagePath),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
             ),
-            child: imagePath.isEmpty
-                ? const Icon(Icons.person, size: 50, color: Colors.white)
-                : null,
+            padding: const EdgeInsets.all(2),
+            child: ProfileAvatar(
+              size: 75,
+              iconSize: 50,
+              imageSource: imagePath,
+            ),
           ),
           const SizedBox(width: 15),
           Expanded(

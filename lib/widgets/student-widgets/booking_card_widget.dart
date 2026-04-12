@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/StudentAccess/menu-subscreens/my_booking_details.dart';
 import 'package:tutophia/models/student-model/booking_data.dart';
+import 'package:tutophia/widgets/profile-avatar.dart';
 
 class BookingCardWidget extends StatelessWidget {
   final BookingData booking;
@@ -46,21 +47,18 @@ class BookingCardWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 70,
-            height: 70,
+            width: 74,
+            height: 74,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.grey.shade600,
-              image: booking.tutorImagePath.isNotEmpty
-                  ? DecorationImage(
-                      image: AssetImage(booking.tutorImagePath),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
             ),
-            child: booking.tutorImagePath.isEmpty
-                ? const Icon(Icons.person, size: 50, color: Colors.white)
-                : null,
+            padding: const EdgeInsets.all(2),
+            child: ProfileAvatar(
+              size: 70,
+              iconSize: 50,
+              imageSource: booking.tutorImagePath,
+            ),
           ),
           const SizedBox(width: 15),
           Expanded(

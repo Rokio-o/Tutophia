@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/widgets/profile-avatar.dart';
 
 class StudentProfileCard extends StatelessWidget {
   final String name;
   final String program;
+  final String? studentId;
+  final String? profileImageSource;
   final VoidCallback? onViewProfile;
 
   const StudentProfileCard({
     super.key,
     required this.name,
     required this.program,
+    this.studentId,
+    this.profileImageSource,
     this.onViewProfile,
   });
 
@@ -29,14 +34,11 @@ class StudentProfileCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-            ),
-            child: const Icon(Icons.person, size: 45, color: Colors.grey),
+          ProfileAvatar(
+            size: 70,
+            iconSize: 45,
+            imageSource: profileImageSource,
+            userId: studentId,
           ),
           const SizedBox(width: 15),
           Expanded(

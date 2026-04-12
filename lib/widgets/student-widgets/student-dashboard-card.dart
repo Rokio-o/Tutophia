@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/widgets/profile-avatar.dart';
 
 class StudentDashboardCard extends StatelessWidget {
   final String name;
@@ -6,7 +7,7 @@ class StudentDashboardCard extends StatelessWidget {
   final int upcomingSessions;
   final int pendingBookings;
   final int newMaterials;
-  final String? profileImagePath;
+  final String? profileImageSource;
 
   const StudentDashboardCard({
     super.key,
@@ -15,7 +16,7 @@ class StudentDashboardCard extends StatelessWidget {
     required this.upcomingSessions,
     required this.pendingBookings,
     required this.newMaterials,
-    this.profileImagePath,
+    this.profileImageSource,
   });
 
   @override
@@ -31,23 +32,10 @@ class StudentDashboardCard extends StatelessWidget {
           // ── Profile Row ──
           Row(
             children: [
-              Container(
-                width: 75,
-                height: 75,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-                child: ClipOval(
-                  child: profileImagePath != null
-                      ? Image.asset(
-                          profileImagePath!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) =>
-                              const Icon(Icons.person, size: 40),
-                        )
-                      : const Icon(Icons.person, size: 40),
-                ),
+              ProfileAvatar(
+                size: 75,
+                iconSize: 40,
+                imageSource: profileImageSource,
               ),
               const SizedBox(width: 15),
               Column(

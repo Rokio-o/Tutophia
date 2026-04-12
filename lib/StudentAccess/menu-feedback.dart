@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tutophia/models/student-model/feedback_data.dart';
 import 'package:tutophia/data/student-data/feedback_repository.dart';
@@ -25,25 +26,15 @@ class FeedbackScreen extends StatefulWidget {
 
 class _FeedbackScreenState extends State<FeedbackScreen> {
   _FeedbackTab _activeTab = _FeedbackTab.toRate;
+  final StudentFeedbackRepository _repository =
+      StudentFeedbackRepository.instance;
 
   final TextEditingController _commentController = TextEditingController();
   int _selectedRating = 0;
 
   bool _isRatingMode = false;
+  bool _isSaving = false;
   ToRateData? _selectedTutor;
-
-  // Mutable local copies from repository
-  late List<ToRateData> _toRateList;
-  late List<ReviewData> _reviews;
-  late List<TutorAdviceData> _tutorAdvice;
-
-  @override
-  void initState() {
-    super.initState();
-    _toRateList = List.from(toRateList);
-    _reviews = List.from(reviewsList);
-    _tutorAdvice = List.from(tutorAdviceList);
-  }
 
   @override
   void dispose() {
@@ -71,78 +62,102 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     });
   }
 
-  void _saveReview() {
+  Future<void> _saveReview() async {
     if (_selectedTutor == null) return;
+    if (_selectedRating == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a rating first.')),
+      );
+      return;
+    }
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: Color(0xff3d6fa5), width: 1),
-          ),
-          content: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Text(
-              'Your review has\nbeen saved!',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Color(0xff3d6fa5),
-                fontWeight: FontWeight.w500,
-                height: 1.2,
+    setState(() => _isSaving = true);
+
+    try {
+      await _repository.submitReview(
+        tutor: _selectedTutor!,
+        rating: _selectedRating,
+        comment: _commentController.text.trim(),
+      );
+      if (!mounted) {
+        return;
+      }
+
+      await showDialog<void>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: const BorderSide(color: Color(0xff3d6fa5), width: 1),
+            ),
+            content: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'Your review has\nbeen saved!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xff3d6fa5),
+                  fontWeight: FontWeight.w500,
+                  height: 1.2,
+                ),
               ),
             ),
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actionsPadding: const EdgeInsets.only(bottom: 20),
-          actions: [
-            SizedBox(
-              width: 90,
-              height: 36,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _reviews.insert(
-                      0,
-                      ReviewData(
-                        name: _selectedTutor!.name,
-                        rating: _selectedRating,
-                        comment: _commentController.text.trim(),
-                      ),
-                    );
-                    _toRateList.removeWhere(
-                      (item) => item.name == _selectedTutor!.name,
-                    );
-                    _isRatingMode = false;
-                    _selectedTutor = null;
-                    _selectedRating = 0;
-                    _commentController.clear();
-                    _activeTab = _FeedbackTab.myReviews;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xffbdbdbd),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+            actionsAlignment: MainAxisAlignment.center,
+            actionsPadding: const EdgeInsets.only(bottom: 20),
+            actions: [
+              SizedBox(
+                width: 90,
+                height: 36,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xffbdbdbd),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    padding: EdgeInsets.zero,
                   ),
-                  padding: EdgeInsets.zero,
-                ),
-                child: const Text(
-                  'Okay',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+                  child: const Text(
+                    'Okay',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
-    );
+            ],
+          );
+        },
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isRatingMode = false;
+        _selectedTutor = null;
+        _selectedRating = 0;
+        _commentController.clear();
+        _activeTab = _FeedbackTab.myReviews;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   // ---------- STAR ROW ----------
@@ -265,7 +280,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               child: SizedBox(
                 height: 44,
                 child: ElevatedButton(
-                  onPressed: _saveReview,
+                  onPressed: _isSaving ? null : _saveReview,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xff3d6fa5),
                     foregroundColor: Colors.white,
@@ -274,9 +289,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Save',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Text(
+                    _isSaving ? 'Saving...' : 'Save',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -289,23 +304,104 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   // ---------- BODY CONTENT ----------
 
-  Widget _buildBodyContent() {
+  Widget _buildBodyContent(String studentId) {
     if (_activeTab == _FeedbackTab.toRate && _isRatingMode) {
       return _buildRatingForm();
     }
     if (_activeTab == _FeedbackTab.toRate) {
-      return FeedbackToRateList(items: _toRateList, onRateTap: _startRating);
+      return StreamBuilder<List<ToRateData>>(
+        stream: _repository.watchToRate(studentId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Padding(
+              padding: EdgeInsets.only(top: 40),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.hasError) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: Center(
+                child: Text(
+                  'Error loading tutors to rate: ${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            );
+          }
+
+          return FeedbackToRateList(
+            items: snapshot.data ?? const <ToRateData>[],
+            onRateTap: _startRating,
+          );
+        },
+      );
     }
     if (_activeTab == _FeedbackTab.myReviews) {
-      return FeedbackReviewsList(reviews: _reviews);
+      return StreamBuilder<List<ReviewData>>(
+        stream: _repository.watchMyReviews(studentId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Padding(
+              padding: EdgeInsets.only(top: 40),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.hasError) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: Center(
+                child: Text(
+                  'Error loading your reviews: ${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            );
+          }
+
+          return FeedbackReviewsList(
+            reviews: snapshot.data ?? const <ReviewData>[],
+          );
+        },
+      );
     }
-    return TutorAdviceList(adviceList: _tutorAdvice);
+    return StreamBuilder<List<TutorAdviceData>>(
+      stream: _repository.watchTutorAdvice(studentId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 40),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 40),
+            child: Center(
+              child: Text(
+                'Error loading tutor advice: ${snapshot.error}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.redAccent),
+              ),
+            ),
+          );
+        }
+
+        return TutorAdviceList(
+          adviceList: snapshot.data ?? const <TutorAdviceData>[],
+        );
+      },
+    );
   }
 
   // ---------- BUILD ----------
 
   @override
   Widget build(BuildContext context) {
+    final studentId = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: const Color(0xfff4f4f4),
       appBar: AppBar(
@@ -347,7 +443,17 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               const SizedBox(height: 16),
 
               Expanded(
-                child: SingleChildScrollView(child: _buildBodyContent()),
+                child: studentId == null
+                    ? const Center(
+                        child: Text(
+                          'Please log in to access feedback.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 15, color: Colors.black54),
+                        ),
+                      )
+                    : SingleChildScrollView(
+                        child: _buildBodyContent(studentId),
+                      ),
               ),
             ],
           ),

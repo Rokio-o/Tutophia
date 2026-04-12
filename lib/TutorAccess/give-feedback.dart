@@ -6,7 +6,7 @@ import 'package:tutophia/widgets/tutor-widgets/feedback_constants.dart';
 
 class GiveFeedbackScreen extends StatefulWidget {
   final StudentToRateData student;
-  final void Function(String feedback) onSave;
+  final Future<void> Function(String feedback) onSave;
 
   const GiveFeedbackScreen({
     super.key,
@@ -20,6 +20,7 @@ class GiveFeedbackScreen extends StatefulWidget {
 
 class _GiveFeedbackScreenState extends State<GiveFeedbackScreen> {
   final TextEditingController _feedbackController = TextEditingController();
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -27,15 +28,36 @@ class _GiveFeedbackScreenState extends State<GiveFeedbackScreen> {
     super.dispose();
   }
 
-  void _onSave() {
+  Future<void> _onSave() async {
     if (_feedbackController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please write your feedback.')),
       );
       return;
     }
-    widget.onSave(_feedbackController.text.trim());
-    Navigator.pop(context);
+
+    setState(() => _isSaving = true);
+
+    try {
+      await widget.onSave(_feedbackController.text.trim());
+      if (!mounted) {
+        return;
+      }
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
@@ -49,7 +71,7 @@ class _GiveFeedbackScreenState extends State<GiveFeedbackScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
         ),
       ),
 
@@ -138,7 +160,7 @@ class _GiveFeedbackScreenState extends State<GiveFeedbackScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _isSaving ? null : () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: kFeedbackBorder),
                       shape: RoundedRectangleBorder(
@@ -155,7 +177,7 @@ class _GiveFeedbackScreenState extends State<GiveFeedbackScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _onSave,
+                    onPressed: _isSaving ? null : _onSave,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kFeedbackBlue,
                       shape: RoundedRectangleBorder(
@@ -164,9 +186,9 @@ class _GiveFeedbackScreenState extends State<GiveFeedbackScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Save',
-                      style: TextStyle(
+                    child: Text(
+                      _isSaving ? 'Saving...' : 'Save',
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,

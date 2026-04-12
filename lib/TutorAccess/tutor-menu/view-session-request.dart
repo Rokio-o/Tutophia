@@ -7,6 +7,7 @@ import 'package:tutophia/TutorAccess/notification-tutor.dart';
 import 'package:tutophia/TutorAccess/profile-tutor.dart';
 import 'package:tutophia/widgets/tutor-widgets/bottom-navigation-tutor.dart';
 import 'package:tutophia/TutorAccess/tutor-menu/session-requests-tutor.dart';
+import 'package:tutophia/TutorAccess/tutor-menu/view-student-profile.dart';
 import 'package:tutophia/data/student-data/booking_repository.dart';
 import 'package:tutophia/models/student-model/booking_data.dart';
 
@@ -62,15 +63,15 @@ class _SessionRequestDetailsScreenState
         meetingLink: meetingLinkCtrl.text.trim(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking approved.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Booking approved.')));
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to approve booking: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to approve booking: $e')));
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -109,15 +110,15 @@ class _SessionRequestDetailsScreenState
         'tutor',
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking cancelled.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Booking cancelled.')));
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to cancel booking: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to cancel booking: $e')));
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -153,7 +154,17 @@ class _SessionRequestDetailsScreenState
               StudentProfileCard(
                 name: booking.studentName,
                 program: booking.studentProgram,
-                onViewProfile: () {},
+                studentId: booking.studentId,
+                onViewProfile: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TutorStudentProfileScreen(
+                      studentId: booking.studentId,
+                      fallbackName: booking.studentName,
+                      fallbackProgram: booking.studentProgram,
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 25),
               SessionRequestDetailsCard(
@@ -162,9 +173,13 @@ class _SessionRequestDetailsScreenState
                     '${_formatTime(booking.sessionDateTime)} to ${_formatTime(booking.endDateTime)}',
                 duration: '${booking.durationMinutes} minutes',
                 mode: booking.mode,
-                location: booking.location.isEmpty ? 'Not specified' : booking.location,
+                location: booking.location.isEmpty
+                    ? 'Not specified'
+                    : booking.location,
                 subject: booking.subject,
-                subjectSubtitle: booking.topic.isEmpty ? 'Not Limited' : booking.topic,
+                subjectSubtitle: booking.topic.isEmpty
+                    ? 'Not Limited'
+                    : booking.topic,
                 reason: booking.studentNotes,
               ),
               const SizedBox(height: 30),
@@ -244,7 +259,9 @@ class _SessionRequestDetailsScreenState
   }
 
   String _formatTime(DateTime value) {
-    final hour = value.hour == 0 ? 12 : (value.hour > 12 ? value.hour - 12 : value.hour);
+    final hour = value.hour == 0
+        ? 12
+        : (value.hour > 12 ? value.hour - 12 : value.hour);
     final minute = value.minute.toString().padLeft(2, '0');
     final suffix = value.hour >= 12 ? 'pm' : 'am';
     return '$hour:$minute $suffix';

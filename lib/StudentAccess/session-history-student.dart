@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tutophia/data/student-data/session-history-repository.dart';
+import 'package:tutophia/models/student-model/session-history-data.dart';
 import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
 import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
 import 'package:tutophia/widgets/student-widgets/session-history-card.dart';
@@ -12,6 +14,8 @@ class SessionHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final studentId = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: const Color(0xfff3f3f3),
       body: SafeArea(
@@ -64,13 +68,71 @@ class SessionHistoryScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // Session cards from repository
-              ...sessionHistoryList.map(
-                (session) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: SessionHistoryCard(data: session),
+              if (studentId == null)
+                const Padding(
+                  padding: EdgeInsets.only(top: 32),
+                  child: Center(
+                    child: Text(
+                      'Please log in to view session history.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 15, color: Colors.black54),
+                    ),
+                  ),
+                )
+              else
+                StreamBuilder<List<SessionHistoryData>>(
+                  stream: StudentSessionHistoryRepository.instance
+                      .watchCompletedSessions(studentId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.only(top: 32),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 32),
+                        child: Center(
+                          child: Text(
+                            'Error loading session history: ${snapshot.error}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                      );
+                    }
+
+                    final sessions =
+                        snapshot.data ?? const <SessionHistoryData>[];
+                    if (sessions.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.only(top: 32),
+                        child: Center(
+                          child: Text(
+                            'No completed sessions yet.',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Column(
+                      children: sessions
+                          .map(
+                            (session) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: SessionHistoryCard(data: session),
+                            ),
+                          )
+                          .toList(growable: false),
+                    );
+                  },
                 ),
-              ),
 
               const SizedBox(height: 80),
             ],

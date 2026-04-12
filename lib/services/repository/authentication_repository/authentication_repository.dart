@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -21,6 +23,7 @@ class AuthenticationRepository extends GetxController {
     required String password,
     required String role,
     required Map<String, dynamic> profileData,
+    File? profileImageFile,
   }) async {
     final normalizedEmail = AuthRegistrationValidator.normalizeEmail(email);
 
@@ -54,12 +57,30 @@ class AuthenticationRepository extends GetxController {
         );
       }
 
-      await UserRepository.instance.createUser(
-        uid: user.uid,
-        email: normalizedEmail,
-        role: role,
-        profileData: profileData,
-      );
+      try {
+        await UserRepository.instance.createUser(
+          uid: user.uid,
+          email: normalizedEmail,
+          role: role,
+          profileData: profileData,
+          profileImageFile: profileImageFile,
+        );
+      } catch (error) {
+        try {
+          await user.delete();
+        } catch (cleanupError) {
+          debugPrint('ACCOUNT CLEANUP ERROR - $cleanupError');
+        }
+
+        if (error is SignUpWithEmailAndPasswordFailure) {
+          rethrow;
+        }
+
+        debugPrint('PROFILE CREATION ERROR - $error');
+        throw const SignUpWithEmailAndPasswordFailure(
+          'Failed to save your profile. Please try again.',
+        );
+      }
 
       return credential;
     } on FirebaseAuthException catch (e) {

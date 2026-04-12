@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:tutophia/data/student-data/tutor_repository.dart';
+import 'package:tutophia/models/student-model/feedback_data.dart';
 import 'package:tutophia/models/student-model/tutor_data.dart';
 import 'package:tutophia/StudentAccess/menu-subscreens/tutor_booking.dart';
+import 'package:tutophia/widgets/profile-avatar.dart';
+import 'package:tutophia/widgets/student-widgets/reviews_list.dart';
 
 class StudentTutorProfileScreen extends StatelessWidget {
   final TutorData tutor;
@@ -39,21 +43,19 @@ class StudentTutorProfileScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             Container(
-              width: 120,
-              height: 120,
+              width: 124,
+              height: 124,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.black87, width: 1),
-                image: tutor.imagePath.isNotEmpty
-                    ? DecorationImage(
-                        image: AssetImage(tutor.imagePath),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
               ),
-              child: tutor.imagePath.isEmpty
-                  ? const Icon(Icons.person, size: 60, color: Colors.grey)
-                  : null,
+              padding: const EdgeInsets.all(2),
+              child: ProfileAvatar(
+                size: 120,
+                iconSize: 60,
+                imageSource: tutor.imagePath,
+                userId: tutor.uid,
+              ),
             ),
 
             const SizedBox(height: 15),
@@ -165,6 +167,39 @@ class StudentTutorProfileScreen extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(schedule),
                     ),
+                  ),
+
+                  const Divider(
+                    height: 30,
+                    thickness: 1,
+                    color: Colors.black12,
+                  ),
+
+                  _buildSectionTitle("Recent Reviews"),
+                  FutureBuilder<List<ReviewData>>(
+                    future: fetchRecentTutorReviews(tutor.uid),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        return const Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: Text(
+                            'Unable to load recent reviews right now.',
+                            style: TextStyle(fontSize: 14, color: Colors.black54),
+                          ),
+                        );
+                      }
+
+                      return FeedbackReviewsList(
+                        reviews: snapshot.data ?? const <ReviewData>[],
+                      );
+                    },
                   ),
 
                   const Divider(

@@ -3,12 +3,16 @@
 
 class StudentToRateData {
   final String id;
+  final String studentId;
+  final String bookingId;
   final String name;
   final String program;
   final String imagePath;
 
   const StudentToRateData({
     required this.id,
+    this.studentId = '',
+    this.bookingId = '',
     required this.name,
     required this.program,
     this.imagePath = '',
@@ -20,6 +24,9 @@ class StudentToRateData {
 
 class TutorFeedbackGivenData {
   final String id;
+  final String feedbackId;
+  final String bookingId;
+  final String studentId;
   final String studentName;
   final String program;
   final String imagePath;
@@ -27,6 +34,9 @@ class TutorFeedbackGivenData {
 
   const TutorFeedbackGivenData({
     required this.id,
+    this.feedbackId = '',
+    this.bookingId = '',
+    this.studentId = '',
     required this.studentName,
     required this.program,
     required this.feedback,
@@ -39,6 +49,9 @@ class TutorFeedbackGivenData {
 
 class StudentRatingData {
   final String id;
+  final String feedbackId;
+  final String bookingId;
+  final String studentId;
   final String studentName;
   final String program;
   final String imagePath;
@@ -47,6 +60,9 @@ class StudentRatingData {
 
   const StudentRatingData({
     required this.id,
+    this.feedbackId = '',
+    this.bookingId = '',
+    this.studentId = '',
     required this.studentName,
     required this.program,
     required this.rating,
