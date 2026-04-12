@@ -9,9 +9,18 @@ class AppNotification {
   static const String typeBookingApproved = 'booking_approved';
   static const String typeBookingDeclined = 'booking_declined';
   static const String typeSessionReminder = 'session_reminder';
+  static const String typeMaterialUploaded = 'material_uploaded';
+  static const String typeTutorFeedbackReceived = 'tutor_feedback_received';
+  static const String typeStudentReviewReceived = 'student_review_received';
+  static const String typeBookingCompleted = 'booking_completed';
 
   static const String targetTutorSessionRequests = 'tutor_session_requests';
   static const String targetStudentBookings = 'student_my_bookings';
+  static const String targetStudentSessionMaterials =
+      'student_session_materials';
+  static const String targetStudentTutorAdvice = 'student_feedback_advice';
+  static const String targetTutorStudentReviews = 'tutor_feedback_reviews';
+  static const String targetStudentSessionHistory = 'student_session_history';
 
   final String id;
   final String type;
@@ -79,8 +88,9 @@ class AppNotification {
       'status': status,
       'targetScreen': targetScreen,
       'createdAt': createdAt == null ? null : Timestamp.fromDate(createdAt!),
-      'sessionDateTime':
-          sessionDateTime == null ? null : Timestamp.fromDate(sessionDateTime!),
+      'sessionDateTime': sessionDateTime == null
+          ? null
+          : Timestamp.fromDate(sessionDateTime!),
     };
   }
 

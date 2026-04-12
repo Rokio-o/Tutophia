@@ -27,6 +27,10 @@ export const NOTIFICATION_TYPE = {
   bookingApproved: "booking_approved",
   bookingDeclined: "booking_declined",
   sessionReminder: "session_reminder",
+  materialUploaded: "material_uploaded",
+  tutorFeedbackReceived: "tutor_feedback_received",
+  studentReviewReceived: "student_review_received",
+  bookingCompleted: "booking_completed",
 } as const;
 
 export const NOTIFICATION_STATUS = {
@@ -36,6 +40,10 @@ export const NOTIFICATION_STATUS = {
 export const TARGET_SCREEN = {
   tutorSessionRequests: "tutor_session_requests",
   studentBookings: "student_my_bookings",
+  studentSessionMaterials: "student_session_materials",
+  studentTutorAdvice: "student_feedback_advice",
+  tutorStudentReviews: "tutor_feedback_reviews",
+  studentSessionHistory: "student_session_history",
 } as const;
 
 type CallableData = Record<string, unknown>;
@@ -53,6 +61,7 @@ export interface BookingRecord {
 }
 
 interface NotificationWriteInput {
+  notificationId?: string;
   recipientId: string;
   senderId: string;
   bookingId: string;
@@ -156,14 +165,37 @@ export function queueNotificationWrite(
   transaction: Transaction,
   input: NotificationWriteInput,
 ): void {
-  const notificationRef = db()
-    .collection(USERS_COLLECTION)
-    .doc(input.recipientId)
-    .collection(NOTIFICATIONS_COLLECTION)
-    .doc();
+  const notificationRef = notificationDocRef(
+    input.recipientId,
+    input.notificationId,
+  );
 
-  transaction.set(notificationRef, {
-    id: notificationRef.id,
+  transaction.set(notificationRef, notificationPayload(input, notificationRef.id));
+}
+
+export async function writeNotification(
+  input: NotificationWriteInput,
+): Promise<void> {
+  const notificationRef = notificationDocRef(
+    input.recipientId,
+    input.notificationId,
+  );
+
+  await notificationRef.set(notificationPayload(input, notificationRef.id));
+}
+
+function notificationDocRef(recipientId: string, notificationId?: string) {
+  const notificationsRef = db()
+    .collection(USERS_COLLECTION)
+    .doc(recipientId)
+    .collection(NOTIFICATIONS_COLLECTION);
+
+  return notificationId ? notificationsRef.doc(notificationId) : notificationsRef.doc();
+}
+
+function notificationPayload(input: NotificationWriteInput, notificationId: string) {
+  return {
+    id: notificationId,
     type: input.type,
     title: input.title,
     body: input.body,
@@ -176,7 +208,7 @@ export function queueNotificationWrite(
     sessionDateTime: input.sessionDateTime ?
       Timestamp.fromDate(input.sessionDateTime) :
       null,
-  });
+  };
 }
 
 export function mapBookingDoc(

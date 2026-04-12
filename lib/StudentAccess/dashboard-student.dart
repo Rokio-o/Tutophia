@@ -23,7 +23,6 @@ class StudentDashboard extends StatefulWidget {
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
-  int _selectedIndex = 0;
   String studentName = 'Student';
   String studentCourse = '';
   String? studentProfileImageUrl;
@@ -221,9 +220,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
       // ── Bottom Navigation ──
       bottomNavigationBar: BottomNavStudent(
-        currentIndex: _selectedIndex,
+        currentIndex: 0,
         onTap: (index) {
-          setState(() => _selectedIndex = index);
           if (index == 1) {
             Navigator.push(
               context,

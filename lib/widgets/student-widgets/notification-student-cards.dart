@@ -30,6 +30,21 @@ class NotificationStudentCard extends StatelessWidget {
           icon: Icons.notifications_active_outlined,
           backgroundColor: const Color(0xFF3D6FA5),
         );
+      case AppNotification.typeMaterialUploaded:
+        return _NotificationStyle(
+          icon: Icons.menu_book_outlined,
+          backgroundColor: const Color(0xFF3D6FA5),
+        );
+      case AppNotification.typeTutorFeedbackReceived:
+        return _NotificationStyle(
+          icon: Icons.rate_review_outlined,
+          backgroundColor: const Color(0xFF3D6FA5),
+        );
+      case AppNotification.typeBookingCompleted:
+        return _NotificationStyle(
+          icon: Icons.history_toggle_off_rounded,
+          backgroundColor: const Color(0xFF3D6FA5),
+        );
       case AppNotification.typeNewBookingRequest:
       case AppNotification.typeStudentCancelledBooking:
         return _NotificationStyle(

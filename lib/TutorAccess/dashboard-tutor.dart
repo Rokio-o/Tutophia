@@ -21,7 +21,6 @@ class TutorDashboard extends StatefulWidget {
 }
 
 class _TutorDashboardState extends State<TutorDashboard> {
-  int _selectedIndex = 0;
   StreamSubscription<int>? _pendingSub;
   StreamSubscription<int>? _upcomingSub;
 
@@ -178,17 +177,12 @@ class _TutorDashboardState extends State<TutorDashboard> {
 
       // ── Bottom Navigation ──
       bottomNavigationBar: BottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        currentIndex: 0,
+        onTap: (_) {},
         tabActions: [
+          () {},
           () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const TutorDashboard()),
-            );
-          },
-          () {
-            Navigator.pushReplacement(
+            Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => const TutorNotificationScreen(),
@@ -196,7 +190,7 @@ class _TutorDashboardState extends State<TutorDashboard> {
             );
           },
           () {
-            Navigator.pushReplacement(
+            Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const TutorProfileScreen()),
             );

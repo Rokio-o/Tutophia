@@ -6,6 +6,8 @@ import {
   completeBooking,
   createBooking,
   ensureTodaySessionReminders,
+  notifyOnSessionFeedbackCreated,
+  notifyOnSessionMaterialCreated,
 } from "./bookingFunctions.js";
 
 initializeApp();
@@ -18,5 +20,7 @@ export {
   cancelBooking,
   completeBooking,
   ensureTodaySessionReminders,
+  notifyOnSessionMaterialCreated,
+  notifyOnSessionFeedbackCreated,
 };
 

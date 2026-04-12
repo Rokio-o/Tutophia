@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tutophia/StudentAccess/menu-feedback.dart';
 import 'package:tutophia/StudentAccess/menu-my_booking.dart';
+import 'package:tutophia/StudentAccess/session-history-student.dart';
+import 'package:tutophia/StudentAccess/session-materials.dart';
 import 'package:tutophia/models/notification/app_notification.dart';
 import 'package:tutophia/services/repository/notification_repository/notification_repository.dart';
 import 'package:tutophia/widgets/student-widgets/notification-student-cards.dart';
@@ -22,6 +25,18 @@ class _StudentNotificationsScreenState
   final NotificationRepository _notificationRepository =
       NotificationRepository.instance;
 
+  void _goBackToDashboard() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const StudentDashboard()),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -38,11 +53,11 @@ class _StudentNotificationsScreenState
     );
   }
 
-  Future<void> _markAllAsRead() async {
+  Future<void> _clearAllNotifications() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    await _notificationRepository.markAllAsRead(uid);
+    await _notificationRepository.deleteAllNotifications(uid);
   }
 
   Future<void> _onNotificationTap(AppNotification notification) async {
@@ -66,33 +81,73 @@ class _StudentNotificationsScreenState
       return;
     }
 
-    // TODO: Add additional target screen routes as more notification types are added.
+    if (targetScreen == AppNotification.targetStudentSessionMaterials) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SessionMaterialsScreen()),
+      );
+      return;
+    }
+
+    if (targetScreen == AppNotification.targetStudentTutorAdvice) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const FeedbackScreen(
+            initialTab: FeedbackScreenInitialTab.tutorAdvice,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (targetScreen == AppNotification.targetStudentSessionHistory) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SessionHistoryScreen()),
+      );
+    }
   }
 
   void _showClearConfirmation() {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (_) => ClearNotificationsDialog(
-        onYes: () async {
-          Navigator.of(context).pop();
-          await _markAllAsRead();
-          if (!mounted) return;
-          _showClearedDialog();
-        },
-        onNo: () => Navigator.of(context).pop(),
-      ),
-    );
-  }
-
-  void _showClearedDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => NotificationsClearedDialog(
-        onOkay: () {
-          Navigator.of(context).pop();
-        },
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Clear All Notifications',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+        ),
+        content: const Text(
+          'Are you sure you want to clear all notifications?',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF5A5A6E)),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xff3d6fa5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () async {
+              await _clearAllNotifications();
+              if (!ctx.mounted) return;
+              Navigator.pop(ctx);
+            },
+            child: const Text(
+              'Clear All',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -112,7 +167,7 @@ class _StudentNotificationsScreenState
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GestureDetector(
-                onTap: () => Navigator.pop(context),
+                onTap: _goBackToDashboard,
                 child: const Icon(
                   Icons.arrow_back,
                   color: Colors.black,
@@ -156,7 +211,9 @@ class _StudentNotificationsScreenState
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
 
                         if (snapshot.hasError) {
@@ -209,12 +266,13 @@ class _StudentNotificationsScreenState
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: ElevatedButton(
-                                    onPressed: notifications.isNotEmpty
+                                  onPressed: notifications.isNotEmpty
                                       ? _showClearConfirmation
                                       : null,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: kNavy,
-                                    disabledBackgroundColor: Colors.grey.shade400,
+                                    disabledBackgroundColor:
+                                        Colors.grey.shade400,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 28,
@@ -259,137 +317,6 @@ class _StudentNotificationsScreenState
             );
           }
         },
-      ),
-    );
-  }
-}
-
-// ── ClearNotificationsDialog ──────────────────────────────────────────────────
-
-class ClearNotificationsDialog extends StatelessWidget {
-  final VoidCallback onYes;
-  final VoidCallback onNo;
-
-  const ClearNotificationsDialog({
-    super.key,
-    required this.onYes,
-    required this.onNo,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Clear all\nnotifications?',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _DialogButton(
-                  label: 'Yes',
-                  color: const Color(0xff3d6fa5),
-                  onPressed: onYes,
-                ),
-                const SizedBox(width: 12),
-                _DialogButton(
-                  label: 'No',
-                  color: const Color(0xff3d6fa5),
-                  onPressed: onNo,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── NotificationsClearedDialog ────────────────────────────────────────────────
-
-class NotificationsClearedDialog extends StatelessWidget {
-  final VoidCallback onOkay;
-
-  const NotificationsClearedDialog({super.key, required this.onOkay});
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Notifications\nCleared!',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xff2e7d32),
-              ),
-            ),
-            const SizedBox(height: 24),
-            _DialogButton(
-              label: 'Okay',
-              color: const Color(0xff3d6fa5),
-              onPressed: onOkay,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── _DialogButton ─────────────────────────────────────────────────────────────
-
-class _DialogButton extends StatelessWidget {
-  final String label;
-  final Color color;
-  final VoidCallback onPressed;
-
-  const _DialogButton({
-    required this.label,
-    required this.color,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 80,
-      height: 36,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          padding: EdgeInsets.zero,
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ),
     );
   }

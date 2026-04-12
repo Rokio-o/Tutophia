@@ -129,6 +129,10 @@ class UploadMaterialsRepository {
         'studentName': upload.recipient.studentName,
         'bookingId': upload.recipient.bookingId,
         'subject': upload.recipient.subject,
+        if (upload.recipient.sessionDateTime != null)
+          'sessionDateTime': Timestamp.fromDate(
+            upload.recipient.sessionDateTime!,
+          ),
         'title': upload.title.trim(),
         'description': upload.description.trim(),
         'fileName': upload.fileName.trim(),

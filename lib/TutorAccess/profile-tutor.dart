@@ -26,6 +26,18 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
   final ImagePicker picker = ImagePicker();
   bool _isUploadingProfileImage = false;
 
+  void _goBackToDashboard() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const TutorDashboard()),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -841,7 +853,10 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const BackButton(color: Colors.black),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: _goBackToDashboard,
+        ),
         title: const Text(
           "PROFILE",
           style: TextStyle(

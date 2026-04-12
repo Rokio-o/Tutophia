@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:tutophia/TutorAccess/dashboard-tutor.dart';
 import 'package:tutophia/TutorAccess/profile-tutor.dart';
+import 'package:tutophia/TutorAccess/tutor-menu/feedback-tutor.dart';
 import 'package:tutophia/TutorAccess/tutor-menu/session-requests-tutor.dart';
 import 'package:tutophia/models/notification/app_notification.dart';
 import 'package:tutophia/services/repository/notification_repository/notification_repository.dart';
@@ -17,9 +18,20 @@ class TutorNotificationScreen extends StatefulWidget {
 }
 
 class _TutorNotificationScreenState extends State<TutorNotificationScreen> {
-  int _selectedIndex = 1;
   final NotificationRepository _notificationRepository =
       NotificationRepository.instance;
+
+  void _goBackToDashboard() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const TutorDashboard()),
+    );
+  }
 
   @override
   void initState() {
@@ -58,7 +70,16 @@ class _TutorNotificationScreenState extends State<TutorNotificationScreen> {
       return;
     }
 
-    // TODO: Add additional target screen routes as more notification types are added.
+    if (targetScreen == AppNotification.targetTutorStudentReviews) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const FeedbackTutorScreen(
+            initialTab: FeedbackTutorInitialTab.studentsFeedback,
+          ),
+        ),
+      );
+    }
   }
 
   void _clearAll(String uid) {
@@ -90,8 +111,8 @@ class _TutorNotificationScreenState extends State<TutorNotificationScreen> {
               ),
             ),
             onPressed: () async {
-              await _notificationRepository.markAllAsRead(uid);
-              if (!mounted) return;
+              await _notificationRepository.deleteAllNotifications(uid);
+              if (!ctx.mounted) return;
               Navigator.pop(ctx);
             },
             child: const Text(
@@ -116,7 +137,7 @@ class _TutorNotificationScreenState extends State<TutorNotificationScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _goBackToDashboard,
         ),
       ),
 
@@ -154,8 +175,7 @@ class _TutorNotificationScreenState extends State<TutorNotificationScreen> {
                 : StreamBuilder<List<AppNotification>>(
                     stream: _notificationRepository.watchNotifications(uid),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       }
 
@@ -208,8 +228,9 @@ class _TutorNotificationScreenState extends State<TutorNotificationScreen> {
                         snapshot.data ?? const <AppNotification>[];
 
                     return ElevatedButton(
-                      onPressed:
-                          notifications.isEmpty ? null : () => _clearAll(uid),
+                      onPressed: notifications.isEmpty
+                          ? null
+                          : () => _clearAll(uid),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xff3d6fa5),
                         padding: const EdgeInsets.symmetric(
@@ -240,8 +261,8 @@ class _TutorNotificationScreenState extends State<TutorNotificationScreen> {
 
       // ── Bottom Nav ─────────────────────────────────────────────────────────
       bottomNavigationBar: BottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        currentIndex: 1,
+        onTap: (_) {},
         tabActions: [
           () => Navigator.pushReplacement(
             context,

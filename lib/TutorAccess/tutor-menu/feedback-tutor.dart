@@ -15,20 +15,31 @@ import 'package:tutophia/widgets/tutor-widgets/student-to-rate-card.dart';
 
 // ── Tab Enum ──────────────────────────────────────────────────────────────────
 
-enum _FeedbackTab { giveFeedback, myFeedback, studentsFeedback }
+enum FeedbackTutorInitialTab { giveFeedback, myFeedback, studentsFeedback }
 
 // ── FeedbackTutorScreen ───────────────────────────────────────────────────────
 
 class FeedbackTutorScreen extends StatefulWidget {
-  const FeedbackTutorScreen({super.key});
+  final FeedbackTutorInitialTab initialTab;
+
+  const FeedbackTutorScreen({
+    super.key,
+    this.initialTab = FeedbackTutorInitialTab.giveFeedback,
+  });
 
   @override
   State<FeedbackTutorScreen> createState() => _FeedbackTutorScreenState();
 }
 
 class _FeedbackTutorScreenState extends State<FeedbackTutorScreen> {
-  _FeedbackTab _activeTab = _FeedbackTab.giveFeedback;
+  late FeedbackTutorInitialTab _activeTab;
   final TutorFeedbackRepository _repository = TutorFeedbackRepository.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeTab = widget.initialTab;
+  }
 
   Future<void> _openGiveFeedbackScreen(StudentToRateData student) async {
     final saved = await Navigator.push<bool>(
@@ -45,7 +56,7 @@ class _FeedbackTutorScreenState extends State<FeedbackTutorScreen> {
     );
 
     if (saved == true && mounted) {
-      setState(() => _activeTab = _FeedbackTab.myFeedback);
+      setState(() => _activeTab = FeedbackTutorInitialTab.myFeedback);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Feedback saved!')));
@@ -56,7 +67,7 @@ class _FeedbackTutorScreenState extends State<FeedbackTutorScreen> {
 
   Widget _buildBodyContent(String tutorId) {
     switch (_activeTab) {
-      case _FeedbackTab.giveFeedback:
+      case FeedbackTutorInitialTab.giveFeedback:
         return StreamBuilder<List<StudentToRateData>>(
           stream: _repository.watchStudentsPendingFeedback(tutorId),
           builder: (context, snapshot) {
@@ -79,7 +90,7 @@ class _FeedbackTutorScreenState extends State<FeedbackTutorScreen> {
             );
           },
         );
-      case _FeedbackTab.myFeedback:
+      case FeedbackTutorInitialTab.myFeedback:
         return StreamBuilder<List<TutorFeedbackGivenData>>(
           stream: _repository.watchFeedbackGiven(tutorId),
           builder: (context, snapshot) {
@@ -101,7 +112,7 @@ class _FeedbackTutorScreenState extends State<FeedbackTutorScreen> {
             );
           },
         );
-      case _FeedbackTab.studentsFeedback:
+      case FeedbackTutorInitialTab.studentsFeedback:
         return StreamBuilder<List<StudentRatingData>>(
           stream: _repository.watchStudentRatings(tutorId),
           builder: (context, snapshot) {
@@ -199,8 +210,8 @@ class _FeedbackTutorScreenState extends State<FeedbackTutorScreen> {
 // ── _FeedbackTabBar ───────────────────────────────────────────────────────────
 
 class _FeedbackTabBar extends StatelessWidget {
-  final _FeedbackTab active;
-  final ValueChanged<_FeedbackTab> onTabChanged;
+  final FeedbackTutorInitialTab active;
+  final ValueChanged<FeedbackTutorInitialTab> onTabChanged;
 
   const _FeedbackTabBar({required this.active, required this.onTabChanged});
 
@@ -211,25 +222,25 @@ class _FeedbackTabBar extends StatelessWidget {
         Expanded(
           child: _TabButton(
             label: 'Give Feedback',
-            isActive: active == _FeedbackTab.giveFeedback,
+            isActive: active == FeedbackTutorInitialTab.giveFeedback,
             position: _TabPosition.left,
-            onTap: () => onTabChanged(_FeedbackTab.giveFeedback),
+            onTap: () => onTabChanged(FeedbackTutorInitialTab.giveFeedback),
           ),
         ),
         Expanded(
           child: _TabButton(
             label: 'My Feedback',
-            isActive: active == _FeedbackTab.myFeedback,
+            isActive: active == FeedbackTutorInitialTab.myFeedback,
             position: _TabPosition.middle,
-            onTap: () => onTabChanged(_FeedbackTab.myFeedback),
+            onTap: () => onTabChanged(FeedbackTutorInitialTab.myFeedback),
           ),
         ),
         Expanded(
           child: _TabButton(
             label: "Student's Feedback",
-            isActive: active == _FeedbackTab.studentsFeedback,
+            isActive: active == FeedbackTutorInitialTab.studentsFeedback,
             position: _TabPosition.right,
-            onTap: () => onTabChanged(_FeedbackTab.studentsFeedback),
+            onTap: () => onTabChanged(FeedbackTutorInitialTab.studentsFeedback),
           ),
         ),
       ],

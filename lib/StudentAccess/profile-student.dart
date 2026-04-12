@@ -26,6 +26,18 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   final ImagePicker picker = ImagePicker();
   bool _isUploadingProfileImage = false;
 
+  void _goBackToDashboard() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const StudentDashboard()),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -600,7 +612,10 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: const BackButton(),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _goBackToDashboard,
+        ),
         title: const Text(
           "PROFILE",
           style: TextStyle(

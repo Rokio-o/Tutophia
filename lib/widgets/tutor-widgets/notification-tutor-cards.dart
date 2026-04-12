@@ -30,6 +30,11 @@ class NotificationTutorCard extends StatelessWidget {
           icon: Icons.notifications_active_outlined,
           backgroundColor: const Color(0xff3d6fa5),
         );
+      case AppNotification.typeStudentReviewReceived:
+        return _NotificationStyle(
+          icon: Icons.star_outline_rounded,
+          backgroundColor: const Color(0xff3d6fa5),
+        );
       case AppNotification.typeBookingApproved:
       case AppNotification.typeBookingDeclined:
         return _NotificationStyle(

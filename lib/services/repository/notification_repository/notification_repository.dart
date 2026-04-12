@@ -61,6 +61,27 @@ class NotificationRepository {
     await batch.commit();
   }
 
+  Future<void> deleteAllNotifications(String uid) async {
+    while (true) {
+      final snapshot = await _notificationsRef(uid).limit(400).get();
+
+      if (snapshot.docs.isEmpty) {
+        return;
+      }
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      await batch.commit();
+
+      if (snapshot.docs.length < 400) {
+        return;
+      }
+    }
+  }
+
   Future<void> ensureTodaySessionReminders({
     required String uid,
     required bool forTutor,

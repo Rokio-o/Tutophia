@@ -1,4 +1,5 @@
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {
   BOOKING_STATUS,
@@ -17,6 +18,7 @@ import {
   requireDateFromMillis,
   requireNumber,
   requireString,
+  writeNotification,
 } from "./bookingHelpers.js";
 
 interface BookingMutationResult {
@@ -29,6 +31,9 @@ interface ReminderMutationResult {
   success: true;
   createdCount: number;
 }
+
+const SESSION_MATERIALS_COLLECTION = "sessionMaterials";
+const SESSION_FEEDBACK_COLLECTION = "sessionFeedback";
 
 export const createBooking = onCall(async (request): Promise<BookingMutationResult> => {
   const callerUid = assertAuthenticated(request);
@@ -321,11 +326,32 @@ export const completeBooking = onCall(async (request): Promise<BookingMutationRe
       );
     }
 
+    const studentId = String(bookingData.studentId ?? "").trim();
+    const subject = String(bookingData.subject ?? "").trim();
+    const tutorName = String(bookingData.tutorName ?? "Your tutor").trim();
+    const sessionDateTime = (bookingData.sessionDateTime as Timestamp).toDate();
+
     transaction.update(bookingRef, {
       status: BOOKING_STATUS.completed,
       completedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
+
+    if (studentId) {
+      queueNotificationWrite(transaction, {
+        notificationId: `booking_completed_${bookingId}`,
+        recipientId: studentId,
+        senderId: tutorId,
+        bookingId,
+        type: NOTIFICATION_TYPE.bookingCompleted,
+        title: "Session Completed",
+        body: subject ?
+          `${tutorName} marked your ${subject} session as completed.` :
+          `${tutorName} marked your session as completed.`,
+        targetScreen: TARGET_SCREEN.studentSessionHistory,
+        sessionDateTime,
+      });
+    }
   });
 
   return {
@@ -424,3 +450,145 @@ export const ensureTodaySessionReminders = onCall(
     };
   },
 );
+
+export const notifyOnSessionMaterialCreated = onDocumentCreated(
+  `${SESSION_MATERIALS_COLLECTION}/{materialId}`,
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+      return;
+    }
+
+    const data = snapshot.data() ?? {};
+    const materialId = asString(event.params.materialId || data.materialId || snapshot.id);
+    const recipientId = asString(data.studentId);
+    const senderId = asString(data.tutorId);
+
+    if (!materialId || !recipientId || !senderId) {
+      return;
+    }
+
+    const tutorName = asString(data.tutorName) || "Your tutor";
+    const subject = asString(data.subject) || "your session";
+
+    await writeNotification({
+      notificationId: `material_uploaded_${materialId}`,
+      recipientId,
+      senderId,
+      bookingId: asString(data.bookingId),
+      type: NOTIFICATION_TYPE.materialUploaded,
+      title: "New Session Material",
+      body: `${tutorName} uploaded material for ${subject}.`,
+      targetScreen: TARGET_SCREEN.studentSessionMaterials,
+      sessionDateTime: asDate(data.sessionDateTime),
+    });
+  },
+);
+
+export const notifyOnSessionFeedbackCreated = onDocumentCreated(
+  `${SESSION_FEEDBACK_COLLECTION}/{feedbackId}`,
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+      return;
+    }
+
+    const data = snapshot.data() ?? {};
+    const feedbackId = asString(event.params.feedbackId || data.feedbackId || snapshot.id);
+    const direction = asString(data.direction);
+    const recipientId = asString(data.recipientId);
+    const senderId = asString(data.authorId);
+    const bookingId = asString(data.bookingId);
+
+    if (!feedbackId || !recipientId || !senderId || !bookingId) {
+      return;
+    }
+
+    const booking = await loadBookingNotificationContext(bookingId);
+
+    if (direction === "tutor_to_student") {
+      await writeNotification({
+        notificationId: `tutor_feedback_received_${feedbackId}`,
+        recipientId,
+        senderId,
+        bookingId,
+        type: NOTIFICATION_TYPE.tutorFeedbackReceived,
+        title: "New Tutor Advice",
+        body: `${booking?.tutorName || "Your tutor"} left advice for your completed session.`,
+        targetScreen: TARGET_SCREEN.studentTutorAdvice,
+        sessionDateTime: booking?.sessionDateTime ?? null,
+      });
+      return;
+    }
+
+    if (direction === "student_to_tutor") {
+      await writeNotification({
+        notificationId: `student_review_received_${feedbackId}`,
+        recipientId,
+        senderId,
+        bookingId,
+        type: NOTIFICATION_TYPE.studentReviewReceived,
+        title: "New Student Review",
+        body: `${booking?.studentName || "A student"} submitted a review for a completed session.`,
+        targetScreen: TARGET_SCREEN.tutorStudentReviews,
+        sessionDateTime: booking?.sessionDateTime ?? null,
+      });
+    }
+  },
+);
+
+function asString(value: unknown): string {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (value == null) {
+    return "";
+  }
+
+  return String(value).trim();
+}
+
+function asDate(value: unknown): Date | null {
+  if (value instanceof Timestamp) {
+    return value.toDate();
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    const result = new Date(value);
+    return Number.isNaN(result.getTime()) ? null : result;
+  }
+
+  if (typeof value === "string") {
+    const result = new Date(value);
+    return Number.isNaN(result.getTime()) ? null : result;
+  }
+
+  return null;
+}
+
+async function loadBookingNotificationContext(bookingId: string): Promise<{
+  tutorName: string;
+  studentName: string;
+  sessionDateTime: Date | null;
+} | null> {
+  if (!bookingId) {
+    return null;
+  }
+
+  const bookingSnapshot = await db().collection(BOOKINGS_COLLECTION).doc(bookingId).get();
+  if (!bookingSnapshot.exists) {
+    return null;
+  }
+
+  const bookingData = bookingSnapshot.data() ?? {};
+  return {
+    tutorName: asString(bookingData.tutorName),
+    studentName: asString(bookingData.studentName),
+    sessionDateTime: asDate(bookingData.sessionDateTime),
+  };
+}

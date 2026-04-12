@@ -13,19 +13,24 @@ import 'package:tutophia/StudentAccess/dashboard-student.dart';
 
 // ── Tab Enum ──────────────────────────────────────────────────────────────────
 
-enum _FeedbackTab { toRate, myReviews, tutorAdvice }
+enum FeedbackScreenInitialTab { toRate, myReviews, tutorAdvice }
 
 // ── FeedbackScreen ────────────────────────────────────────────────────────────
 
 class FeedbackScreen extends StatefulWidget {
-  const FeedbackScreen({super.key});
+  final FeedbackScreenInitialTab initialTab;
+
+  const FeedbackScreen({
+    super.key,
+    this.initialTab = FeedbackScreenInitialTab.toRate,
+  });
 
   @override
   State<FeedbackScreen> createState() => _FeedbackScreenState();
 }
 
 class _FeedbackScreenState extends State<FeedbackScreen> {
-  _FeedbackTab _activeTab = _FeedbackTab.toRate;
+  late FeedbackScreenInitialTab _activeTab;
   final StudentFeedbackRepository _repository =
       StudentFeedbackRepository.instance;
 
@@ -35,6 +40,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   bool _isRatingMode = false;
   bool _isSaving = false;
   ToRateData? _selectedTutor;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeTab = widget.initialTab;
+  }
 
   @override
   void dispose() {
@@ -142,7 +153,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         _selectedTutor = null;
         _selectedRating = 0;
         _commentController.clear();
-        _activeTab = _FeedbackTab.myReviews;
+        _activeTab = FeedbackScreenInitialTab.myReviews;
       });
     } catch (error) {
       if (!mounted) {
@@ -305,10 +316,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   // ---------- BODY CONTENT ----------
 
   Widget _buildBodyContent(String studentId) {
-    if (_activeTab == _FeedbackTab.toRate && _isRatingMode) {
+    if (_activeTab == FeedbackScreenInitialTab.toRate && _isRatingMode) {
       return _buildRatingForm();
     }
-    if (_activeTab == _FeedbackTab.toRate) {
+    if (_activeTab == FeedbackScreenInitialTab.toRate) {
       return StreamBuilder<List<ToRateData>>(
         stream: _repository.watchToRate(studentId),
         builder: (context, snapshot) {
@@ -338,7 +349,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         },
       );
     }
-    if (_activeTab == _FeedbackTab.myReviews) {
+    if (_activeTab == FeedbackScreenInitialTab.myReviews) {
       return StreamBuilder<List<ReviewData>>(
         stream: _repository.watchMyReviews(studentId),
         builder: (context, snapshot) {
@@ -491,8 +502,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 // ── _FeedbackTabBar ───────────────────────────────────────────────────────────
 
 class _FeedbackTabBar extends StatelessWidget {
-  final _FeedbackTab active;
-  final ValueChanged<_FeedbackTab> onTabChanged;
+  final FeedbackScreenInitialTab active;
+  final ValueChanged<FeedbackScreenInitialTab> onTabChanged;
 
   const _FeedbackTabBar({required this.active, required this.onTabChanged});
 
@@ -503,25 +514,25 @@ class _FeedbackTabBar extends StatelessWidget {
         Expanded(
           child: _TabButton(
             label: 'To Rate',
-            isActive: active == _FeedbackTab.toRate,
+            isActive: active == FeedbackScreenInitialTab.toRate,
             position: _TabPosition.left,
-            onTap: () => onTabChanged(_FeedbackTab.toRate),
+            onTap: () => onTabChanged(FeedbackScreenInitialTab.toRate),
           ),
         ),
         Expanded(
           child: _TabButton(
             label: 'My Reviews',
-            isActive: active == _FeedbackTab.myReviews,
+            isActive: active == FeedbackScreenInitialTab.myReviews,
             position: _TabPosition.middle,
-            onTap: () => onTabChanged(_FeedbackTab.myReviews),
+            onTap: () => onTabChanged(FeedbackScreenInitialTab.myReviews),
           ),
         ),
         Expanded(
           child: _TabButton(
             label: "Tutor's Advice",
-            isActive: active == _FeedbackTab.tutorAdvice,
+            isActive: active == FeedbackScreenInitialTab.tutorAdvice,
             position: _TabPosition.right,
-            onTap: () => onTabChanged(_FeedbackTab.tutorAdvice),
+            onTap: () => onTabChanged(FeedbackScreenInitialTab.tutorAdvice),
           ),
         ),
       ],
