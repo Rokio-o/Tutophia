@@ -2,10 +2,14 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'login.dart';
+import 'package:tutophia/onboardingScreen.dart';
 import 'package:tutophia/services/authentication/verified_home_router.dart';
 import 'package:tutophia/services/repository/authentication_repository/authentication_repository.dart';
 import 'package:tutophia/verify-email.dart';
+
+const _hasSeenOnboardingKey = 'has_seen_onboarding';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -28,6 +32,15 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _routeFromSplash() async {
     if (!mounted || _hasNavigated) return;
 
+    final preferences = await SharedPreferences.getInstance();
+    final hasSeenOnboarding =
+        preferences.getBool(_hasSeenOnboardingKey) ?? false;
+
+    if (!hasSeenOnboarding) {
+      _navigateTo(const OnboardingScreen());
+      return;
+    }
+
     final currentUser = FirebaseAuth.instance.currentUser;
     Widget destination = const LoginScreen();
 
@@ -49,6 +62,10 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     }
 
+    _navigateTo(destination);
+  }
+
+  void _navigateTo(Widget destination) {
     if (!mounted || _hasNavigated) return;
     _hasNavigated = true;
 
