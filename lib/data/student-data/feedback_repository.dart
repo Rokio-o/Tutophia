@@ -247,6 +247,7 @@ class StudentFeedbackRepository {
           ? booking.tutorName
           : _displayNameFromProfile(tutorProfile, fallback: 'Tutor'),
       role: _buildTutorSubtitle(booking, tutorProfile),
+      imagePath: _profileImageSource(tutorProfile),
     );
   }
 
@@ -266,6 +267,7 @@ class StudentFeedbackRepository {
       comment: feedback.comment.isNotEmpty
           ? feedback.comment
           : 'No comment provided.',
+      imagePath: _profileImageSource(tutorProfile),
     );
   }
 
@@ -285,6 +287,7 @@ class StudentFeedbackRepository {
       advice: feedback.advice.isNotEmpty
           ? feedback.advice
           : 'No advice provided yet.',
+      imagePath: _profileImageSource(tutorProfile),
     );
   }
 
@@ -349,6 +352,24 @@ class StudentFeedbackRepository {
 
     final displayName = _asString(profile['displayName']);
     return displayName.isNotEmpty ? displayName : fallback;
+  }
+
+  String? _profileImageSource(Map<String, dynamic>? profile) {
+    if (profile == null) {
+      return null;
+    }
+
+    final profileImageUrl = _asString(profile['profileImageUrl']);
+    if (profileImageUrl.isNotEmpty) {
+      return profileImageUrl;
+    }
+
+    final profileImagePath = _asString(profile['profileImagePath']);
+    if (profileImagePath.isNotEmpty) {
+      return profileImagePath;
+    }
+
+    return null;
   }
 
   String _formatShortDate(DateTime dateTime) {

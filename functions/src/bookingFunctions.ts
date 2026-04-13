@@ -9,7 +9,6 @@ import {
   assertAuthenticated,
   db,
   findApprovedOverlap,
-  formatSessionDateTime,
   getDataMap,
   isAdmin,
   mapBookingDoc,
@@ -109,8 +108,7 @@ export const createBooking = onCall(async (request): Promise<BookingMutationResu
       bookingId: bookingRef.id,
       type: NOTIFICATION_TYPE.newBookingRequest,
       title: "New Booking Request",
-      body: `${studentName} requested a ${subject} session on ` +
-        `${formatSessionDateTime(sessionDateTime)}.`,
+      body: `${studentName} requested a ${subject} session.`,
       targetScreen: TARGET_SCREEN.tutorSessionRequests,
       sessionDateTime,
     });
@@ -191,8 +189,7 @@ export const approveBooking = onCall(async (request): Promise<BookingMutationRes
       type: NOTIFICATION_TYPE.bookingApproved,
       title: "Booking Approved",
       body: `${String(bookingData.tutorName ?? "Tutor").trim()} approved ` +
-        `your booking for ${String(bookingData.subject ?? "this session").trim()} ` +
-        `on ${formatSessionDateTime(sessionDateTime)}.`,
+        `your booking for ${String(bookingData.subject ?? "this session").trim()}.`,
       targetScreen: TARGET_SCREEN.studentBookings,
       sessionDateTime,
     });
@@ -265,8 +262,7 @@ export const cancelBooking = onCall(async (request): Promise<BookingMutationResu
         type: NOTIFICATION_TYPE.studentCancelledBooking,
         title: "Booking Cancelled by Student",
         body: `${String(bookingData.studentName ?? "A student").trim()} ` +
-          `cancelled the session for ${subject} on ` +
-          `${formatSessionDateTime(sessionDateTime)}.`,
+          `cancelled the session for ${subject}.`,
         targetScreen: TARGET_SCREEN.tutorSessionRequests,
         sessionDateTime,
       });
@@ -280,8 +276,7 @@ export const cancelBooking = onCall(async (request): Promise<BookingMutationResu
       type: NOTIFICATION_TYPE.bookingDeclined,
       title: "Booking Declined",
       body: `${String(bookingData.tutorName ?? "Your tutor").trim()} declined ` +
-        `or cancelled your booking for ${subject} on ` +
-        `${formatSessionDateTime(sessionDateTime)}.`,
+        `or cancelled your booking for ${subject}.`,
       targetScreen: TARGET_SCREEN.studentBookings,
       sessionDateTime,
     });
@@ -399,15 +394,12 @@ export const ensureTodaySessionReminders = onCall(
 
       const sessionDateTime = booking.sessionDateTime;
       const title = "Session Reminder";
-      const formattedSessionTime = formatSessionDateTime(sessionDateTime);
       const participantName = forTutor ?
         String(booking.studentName ?? "your student").trim() :
         String(booking.tutorName ?? "your tutor").trim();
       const body = forTutor ?
-        `You have an approved session with ${participantName} today at ` +
-          `${formattedSessionTime}.` :
-        `Your session with ${participantName} is scheduled today at ` +
-          `${formattedSessionTime}.`;
+        `You have an approved session with ${participantName} today.` :
+        `Your session with ${participantName} is scheduled today.`;
       const senderId = forTutor ?
         String(booking.studentId ?? "").trim() :
         String(booking.tutorId ?? "").trim();

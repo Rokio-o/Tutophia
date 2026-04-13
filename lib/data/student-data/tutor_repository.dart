@@ -13,7 +13,10 @@ final List<TutorData> availableTutors = [];
 Future<List<TutorData>> fetchAllTutors() async {
   try {
     final results = await Future.wait<dynamic>([
-      _firestore.collection('Users').where('accountType', isEqualTo: 'tutor').get(),
+      _firestore
+          .collection('Users')
+          .where('accountType', isEqualTo: 'tutor')
+          .get(),
       _firestore
           .collection(SessionFeedbackRecord.collectionName)
           .where(
@@ -36,11 +39,11 @@ Future<List<TutorData>> fetchAllTutors() async {
       final lastName = data['lastName'] as String? ?? '';
       final fullName = '${firstName.trim()} ${lastName.trim()}'.trim();
 
-        final ratingSummary =
+      final ratingSummary =
           ratingSummaries[doc.id] ?? const _TutorRatingSummary();
-        final rating = ratingSummary.averageRating.toStringAsFixed(1);
-        final reviewCount = ratingSummary.reviewCount;
-        final reviews =
+      final rating = ratingSummary.averageRating.toStringAsFixed(1);
+      final reviewCount = ratingSummary.reviewCount;
+      final reviews =
           '($reviewCount ${reviewCount == 1 ? 'review' : 'reviews'})';
 
       // Parse session rate - ensure it includes ₱ symbol
@@ -78,6 +81,10 @@ Future<List<TutorData>> fetchAllTutors() async {
         program: data['program'] as String? ?? '',
         yearLevel: data['yearSpent'] as String? ?? '',
         tutoringExperience: data['tutoringExperience'] as String? ?? '',
+        portfolioLink:
+            data['portfolioLink'] as String? ??
+            data['scheduleLink'] as String? ??
+            '',
         mode: _getModeString(data),
         sessionDuration:
             data['sessionDurationHours'] as String? ??
@@ -128,19 +135,24 @@ Future<List<ReviewData>> fetchRecentTutorReviews(
       feedback.map((item) => item.authorId).toSet(),
     );
 
-    return feedback.map((item) {
-      final studentProfile = studentProfiles[item.authorId];
-      final program = _asString(studentProfile?['program']);
+    return feedback
+        .map((item) {
+          final studentProfile = studentProfiles[item.authorId];
+          final program = _asString(studentProfile?['program']);
 
-      return ReviewData(
-        feedbackId: item.feedbackId,
-        bookingId: item.bookingId,
-        name: _displayNameFromProfile(studentProfile, fallback: 'Student'),
-        course: program.isEmpty ? null : program,
-        rating: item.rating ?? 0,
-        comment: item.comment.isEmpty ? 'No comment provided.' : item.comment,
-      );
-    }).toList(growable: false);
+          return ReviewData(
+            feedbackId: item.feedbackId,
+            bookingId: item.bookingId,
+            name: _displayNameFromProfile(studentProfile, fallback: 'Student'),
+            course: program.isEmpty ? null : program,
+            rating: item.rating ?? 0,
+            comment: item.comment.isEmpty
+                ? 'No comment provided.'
+                : item.comment,
+            imagePath: _profileImageSource(studentProfile),
+          );
+        })
+        .toList(growable: false);
   } catch (error) {
     print('Error fetching tutor reviews: $error');
     return const <ReviewData>[];
@@ -247,6 +259,24 @@ String _displayNameFromProfile(
 
   final displayName = _asString(profile['displayName']);
   return displayName.isNotEmpty ? displayName : fallback;
+}
+
+String? _profileImageSource(Map<String, dynamic>? profile) {
+  if (profile == null) {
+    return null;
+  }
+
+  final profileImageUrl = _asString(profile['profileImageUrl']);
+  if (profileImageUrl.isNotEmpty) {
+    return profileImageUrl;
+  }
+
+  final profileImagePath = _asString(profile['profileImagePath']);
+  if (profileImagePath.isNotEmpty) {
+    return profileImagePath;
+  }
+
+  return null;
 }
 
 String _asString(dynamic value) {

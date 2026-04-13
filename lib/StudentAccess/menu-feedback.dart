@@ -7,6 +7,7 @@ import 'package:tutophia/widgets/student-widgets/to_rate_list.dart';
 import 'package:tutophia/widgets/student-widgets/tutor-advice_list.dart';
 import 'package:tutophia/widgets/student-widgets/header-student-wgt.dart';
 import 'package:tutophia/widgets/student-widgets/bottom-navigation-student.dart';
+import 'package:tutophia/widgets/profile-avatar.dart';
 import 'package:tutophia/StudentAccess/notifications-student.dart';
 import 'package:tutophia/StudentAccess/profile-student.dart';
 import 'package:tutophia/StudentAccess/dashboard-student.dart';
@@ -206,10 +207,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     return Column(
       children: [
         const SizedBox(height: 24),
-        const CircleAvatar(
-          radius: 42,
-          backgroundColor: Colors.transparent,
-          child: Icon(Icons.account_circle, size: 90, color: Colors.black54),
+        ProfileAvatar(
+          size: 84,
+          iconSize: 44,
+          imageSource: tutor.imagePath,
+          userId: tutor.tutorId,
         ),
         const SizedBox(height: 12),
         Text(

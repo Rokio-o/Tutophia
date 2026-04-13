@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/models/student-model/feedback_data.dart';
+import 'package:tutophia/widgets/profile-avatar.dart';
 
 class TutorAdviceList extends StatelessWidget {
   final List<TutorAdviceData> adviceList;
@@ -44,10 +45,10 @@ class TutorAdviceList extends StatelessWidget {
                 // ── Tutor info row ──
                 Row(
                   children: [
-                    const Icon(
-                      Icons.account_circle,
+                    ProfileAvatar(
                       size: 48,
-                      color: Colors.black54,
+                      iconSize: 28,
+                      imageSource: item.imagePath,
                     ),
                     const SizedBox(width: 12),
                     Expanded(

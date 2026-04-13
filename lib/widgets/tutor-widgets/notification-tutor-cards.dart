@@ -103,7 +103,7 @@ class NotificationTutorCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    notification.body,
+                    notification.displayBody,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,

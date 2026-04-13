@@ -15,6 +15,7 @@ class TutorData {
   final String program;
   final String yearLevel;
   final String tutoringExperience;
+  final String portfolioLink;
   final String mode;
   final String sessionDuration;
   final String email;
@@ -39,6 +40,7 @@ class TutorData {
     this.program = '',
     this.yearLevel = '',
     this.tutoringExperience = '',
+    this.portfolioLink = '',
     this.mode = '',
     this.sessionDuration = '',
     this.email = '',

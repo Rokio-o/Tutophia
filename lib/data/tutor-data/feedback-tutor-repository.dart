@@ -20,13 +20,19 @@ class TutorFeedbackRepository {
   CollectionReference<Map<String, dynamic>> get _feedbackRef =>
       _firestore.collection(SessionFeedbackRecord.collectionName);
 
+  CollectionReference<Map<String, dynamic>> get _usersRef =>
+      _firestore.collection('Users');
+
   Stream<List<StudentToRateData>> watchStudentsPendingFeedback(String tutorId) {
     return _combineLatest(
       _watchCompletedBookings(tutorId),
       _watchTutorAdviceAuthored(tutorId),
       (bookings, feedback) =>
           _TutorFeedbackSource(bookings: bookings, feedback: feedback),
-    ).map((source) {
+    ).asyncMap((source) async {
+      final studentProfiles = await _loadUserProfiles(
+        source.bookings.map((booking) => booking.studentId).toSet(),
+      );
       final completedFeedbackBookingIds = source.feedback
           .map((item) => item.bookingId)
           .where((bookingId) => bookingId.isNotEmpty)
@@ -37,7 +43,10 @@ class TutorFeedbackRepository {
             (booking) =>
                 !completedFeedbackBookingIds.contains(booking.bookingId),
           )
-          .map(_mapStudentToRate)
+          .map(
+            (booking) =>
+                _mapStudentToRate(booking, studentProfiles[booking.studentId]),
+          )
           .toList(growable: false);
     });
   }
@@ -48,13 +57,22 @@ class TutorFeedbackRepository {
       _watchTutorAdviceAuthored(tutorId),
       (bookings, feedback) =>
           _TutorFeedbackSource(bookings: bookings, feedback: feedback),
-    ).map((source) {
+    ).asyncMap((source) async {
+      final studentProfiles = await _loadUserProfiles(
+        source.bookings.map((booking) => booking.studentId).toSet(),
+      );
       final bookingsById = {
         for (final booking in source.bookings) booking.bookingId: booking,
       };
 
       return source.feedback
-          .map((item) => _mapFeedbackGiven(item, bookingsById[item.bookingId]))
+          .map(
+            (item) => _mapFeedbackGiven(
+              item,
+              bookingsById[item.bookingId],
+              studentProfiles[item.studentId],
+            ),
+          )
           .toList(growable: false);
     });
   }
@@ -65,13 +83,22 @@ class TutorFeedbackRepository {
       _watchStudentRatingsReceived(tutorId),
       (bookings, feedback) =>
           _TutorFeedbackSource(bookings: bookings, feedback: feedback),
-    ).map((source) {
+    ).asyncMap((source) async {
+      final studentProfiles = await _loadUserProfiles(
+        source.bookings.map((booking) => booking.studentId).toSet(),
+      );
       final bookingsById = {
         for (final booking in source.bookings) booking.bookingId: booking,
       };
 
       return source.feedback
-          .map((item) => _mapStudentRating(item, bookingsById[item.bookingId]))
+          .map(
+            (item) => _mapStudentRating(
+              item,
+              bookingsById[item.bookingId],
+              studentProfiles[item.studentId],
+            ),
+          )
           .toList(growable: false);
     });
   }
@@ -198,19 +225,49 @@ class TutorFeedbackRepository {
         );
   }
 
-  StudentToRateData _mapStudentToRate(BookingData booking) {
+  Future<Map<String, Map<String, dynamic>>> _loadUserProfiles(
+    Set<String> userIds,
+  ) async {
+    final validIds = userIds.where((userId) => userId.trim().isNotEmpty);
+    if (validIds.isEmpty) {
+      return const <String, Map<String, dynamic>>{};
+    }
+
+    final docs = await Future.wait(
+      validIds.map((userId) => _usersRef.doc(userId).get()),
+    );
+
+    final profiles = <String, Map<String, dynamic>>{};
+    for (final doc in docs) {
+      final data = doc.data();
+      if (data != null) {
+        profiles[doc.id] = data;
+      }
+    }
+
+    return profiles;
+  }
+
+  StudentToRateData _mapStudentToRate(
+    BookingData booking,
+    Map<String, dynamic>? studentProfile,
+  ) {
     return StudentToRateData(
       id: booking.bookingId,
       studentId: booking.studentId,
       bookingId: booking.bookingId,
-      name: booking.studentName.isNotEmpty ? booking.studentName : 'Student',
+      name: booking.studentName.isNotEmpty
+          ? booking.studentName
+          : _displayNameFromProfile(studentProfile, fallback: 'Student'),
       program: _buildStudentSubtitle(booking),
+      imagePath: _profileImageSource(studentProfile) ?? '',
     );
   }
 
   TutorFeedbackGivenData _mapFeedbackGiven(
     SessionFeedbackRecord feedback,
     BookingData? booking,
+    Map<String, dynamic>? studentProfile,
   ) {
     return TutorFeedbackGivenData(
       id: feedback.feedbackId,
@@ -219,17 +276,19 @@ class TutorFeedbackRepository {
       studentId: feedback.studentId,
       studentName: booking?.studentName.isNotEmpty == true
           ? booking!.studentName
-          : 'Student',
+          : _displayNameFromProfile(studentProfile, fallback: 'Student'),
       program: _buildStudentSubtitle(booking),
       feedback: feedback.advice.isNotEmpty
           ? feedback.advice
           : 'No feedback provided.',
+      imagePath: _profileImageSource(studentProfile) ?? '',
     );
   }
 
   StudentRatingData _mapStudentRating(
     SessionFeedbackRecord feedback,
     BookingData? booking,
+    Map<String, dynamic>? studentProfile,
   ) {
     return StudentRatingData(
       id: feedback.feedbackId,
@@ -238,12 +297,13 @@ class TutorFeedbackRepository {
       studentId: feedback.studentId,
       studentName: booking?.studentName.isNotEmpty == true
           ? booking!.studentName
-          : 'Student',
+          : _displayNameFromProfile(studentProfile, fallback: 'Student'),
       program: _buildStudentSubtitle(booking),
       rating: feedback.rating ?? 0,
       comment: feedback.comment.isNotEmpty
           ? feedback.comment
           : 'No comment provided.',
+      imagePath: _profileImageSource(studentProfile) ?? '',
     );
   }
 
@@ -265,11 +325,55 @@ class TutorFeedbackRepository {
     return parts.join(' • ');
   }
 
+  String _displayNameFromProfile(
+    Map<String, dynamic>? profile, {
+    required String fallback,
+  }) {
+    if (profile == null) {
+      return fallback;
+    }
+
+    final firstName = _asString(profile['firstName']);
+    final lastName = _asString(profile['lastName']);
+    final fullName = '$firstName $lastName'.trim();
+    if (fullName.isNotEmpty) {
+      return fullName;
+    }
+
+    final displayName = _asString(profile['displayName']);
+    return displayName.isNotEmpty ? displayName : fallback;
+  }
+
+  String? _profileImageSource(Map<String, dynamic>? profile) {
+    if (profile == null) {
+      return null;
+    }
+
+    final profileImageUrl = _asString(profile['profileImageUrl']);
+    if (profileImageUrl.isNotEmpty) {
+      return profileImageUrl;
+    }
+
+    final profileImagePath = _asString(profile['profileImagePath']);
+    if (profileImagePath.isNotEmpty) {
+      return profileImagePath;
+    }
+
+    return null;
+  }
+
   String _formatShortDate(DateTime dateTime) {
     final year = (dateTime.year % 100).toString().padLeft(2, '0');
     final month = dateTime.month.toString().padLeft(2, '0');
     final day = dateTime.day.toString().padLeft(2, '0');
     return '$month/$day/$year';
+  }
+
+  String _asString(dynamic value) {
+    if (value == null) {
+      return '';
+    }
+    return value.toString().trim();
   }
 
   Stream<T> _combineLatest<T, A, B>(

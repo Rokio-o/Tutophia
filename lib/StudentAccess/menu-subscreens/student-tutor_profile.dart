@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:tutophia/data/student-data/tutor_repository.dart';
 import 'package:tutophia/models/student-model/feedback_data.dart';
 import 'package:tutophia/models/student-model/tutor_data.dart';
@@ -143,6 +144,7 @@ class StudentTutorProfileScreen extends StatelessWidget {
                     "Tutoring Experience",
                     tutor.tutoringExperience,
                   ),
+                  _buildEvidenceLinkRow(context),
 
                   const Divider(
                     height: 30,
@@ -191,7 +193,10 @@ class StudentTutorProfileScreen extends StatelessWidget {
                           padding: EdgeInsets.only(bottom: 16),
                           child: Text(
                             'Unable to load recent reviews right now.',
-                            style: TextStyle(fontSize: 14, color: Colors.black54),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
                           ),
                         );
                       }
@@ -299,5 +304,72 @@ class StudentTutorProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildEvidenceLinkRow(BuildContext context) {
+    final evidenceLink = tutor.portfolioLink.trim();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Expanded(
+            flex: 2,
+            child: Text(
+              'Tutor Evidence Link',
+              style: TextStyle(fontSize: 14, color: Color(0xff3d6fa5)),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: evidenceLink.isEmpty
+                ? const Text(
+                    'Not provided',
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                  )
+                : InkWell(
+                    onTap: () => _openEvidenceLink(context, evidenceLink),
+                    child: Text(
+                      evidenceLink,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xff3d6fa5),
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openEvidenceLink(BuildContext context, String rawLink) async {
+    final normalizedLink =
+        rawLink.startsWith('http://') || rawLink.startsWith('https://')
+        ? rawLink
+        : 'https://$rawLink';
+    final uri = Uri.tryParse(normalizedLink);
+
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The tutor evidence link is invalid.')),
+      );
+      return;
+    }
+
+    final didLaunch = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!didLaunch && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to open the tutor evidence link.'),
+        ),
+      );
+    }
   }
 }

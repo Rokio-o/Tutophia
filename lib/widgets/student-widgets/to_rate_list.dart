@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/models/student-model/feedback_data.dart';
+import 'package:tutophia/widgets/profile-avatar.dart';
 
 class FeedbackToRateList extends StatelessWidget {
   final List<ToRateData> items;
@@ -44,7 +45,11 @@ class FeedbackToRateList extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.account_circle, size: 48),
+                ProfileAvatar(
+                  size: 48,
+                  iconSize: 28,
+                  imageSource: item.imagePath,
+                ),
 
                 const SizedBox(width: 14),
 

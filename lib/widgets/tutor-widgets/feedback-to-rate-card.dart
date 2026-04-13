@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tutophia/models/tutor-model/feedback-tutor-data.dart';
+import 'package:tutophia/widgets/profile-avatar.dart';
 import 'package:tutophia/widgets/tutor-widgets/feedback_constants.dart';
 
 // ── FeedbackToRateCard ────────────────────────────────────────────────────────
@@ -94,13 +95,13 @@ class StudentAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         color: Colors.grey[200],
         border: Border.all(color: kFeedbackBorder),
-        image: imagePath.isNotEmpty
-            ? DecorationImage(image: AssetImage(imagePath), fit: BoxFit.cover)
-            : null,
       ),
-      child: imagePath.isEmpty
-          ? Icon(Icons.person, size: size * 0.55, color: Colors.grey)
-          : null,
+      padding: const EdgeInsets.all(1.5),
+      child: ProfileAvatar(
+        size: size - 3,
+        iconSize: size * 0.55,
+        imageSource: imagePath,
+      ),
     );
   }
 }
